@@ -1,9 +1,63 @@
 <script setup lang="ts">
 import { themeChange } from 'theme-change'
-import { onMounted } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { PhCaretDown } from '@phosphor-icons/vue'
+import { load, Store } from '@tauri-apps/plugin-store'
 
-onMounted(() => {
+let store: Store
+
+const activeTheme = ref('')
+const themeList = ref([
+    { label: 'Claro', value: 'light' },
+    { label: 'Escuro', value: 'dark' },
+    { label: 'Cupcake', value: 'cupcake' },
+    { label: 'Bumblebee', value: 'bumblebee' },
+    { label: 'Esmeralda', value: 'emerald' },
+    { label: 'Corporativo', value: 'corporate' },
+    { label: 'Synthwave', value: 'synthwave' },
+    { label: 'Retro', value: 'retro' },
+    { label: 'Cyberpunk', value: 'cyberpunk' },
+    { label: 'Valentine', value: 'valentine' },
+    { label: 'Halloween', value: 'halloween' },
+    { label: 'Jardim', value: 'garden' },
+    { label: 'Floresta', value: 'forest' },
+    { label: 'Aqua', value: 'aqua' },
+    { label: 'Lofi', value: 'lofi' },
+    { label: 'Pastel', value: 'pastel' },
+    { label: 'Fantasia', value: 'fantasy' },
+    { label: 'Wireframe', value: 'wireframe' },
+    { label: 'Preto', value: 'black' },
+    { label: 'Luxo', value: 'luxury' },
+    { label: 'Dracula', value: 'dracula' },
+    { label: 'CMYK', value: 'cmyk' },
+    { label: 'Outono', value: 'autumn' },
+    { label: 'Negócios', value: 'business' },
+    { label: 'Ácido', value: 'acid' },
+    { label: 'Limonada', value: 'lemonade' },
+    { label: 'Noite', value: 'night' },
+    { label: 'Café', value: 'coffee' },
+    { label: 'Inverno', value: 'winter' },
+    { label: 'Dim', value: 'dim' },
+    { label: 'Nórdico', value: 'nord' },
+    { label: 'Pôr do sol', value: 'sunset' },
+    { label: 'Caramelo', value: 'caramellatte' },
+    { label: 'Abismo', value: 'abyss' },
+    { label: 'Seda', value: 'silk' }
+])
+
+watch(activeTheme, async () => {
+    await store.set('theme', activeTheme.value)
+    await store.save()
+})
+
+onMounted(async () => {
+    store = await load('settings.json')
+    const savedTheme = await store.get<string>('theme') || 'default'
+
+    activeTheme.value = savedTheme
+
+    document.documentElement.setAttribute('data-theme', savedTheme)
+    
     themeChange(false)
 })
 </script>
@@ -18,354 +72,16 @@ onMounted(() => {
     </div>
 
     <ul tabindex="1" class="dropdown-content bg-base-300 rounded-box z-1 w-fit p-1.5 shadow-2xl h-[64vh] overflow-auto">
-        <li>
+        <li v-for="themeOption in themeList">
             <input
                 data-choose-theme
                 type="radio"
                 name="theme-dropdown"
                 class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Claro"
-                value="default"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Escuro"
-                value="dark"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Cupcake"
-                value="cupcake"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Bumblebee"
-                value="bumblebee"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Esmeralda"
-                value="emerald"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Corporativo"
-                value="corporate"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Synthwave"
-                value="synthwave"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Retro"
-                value="retro"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Cyberpunk"
-                value="cyberpunk"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Valentine"
-                value="valentine"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Halloween"
-                value="halloween"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Jardim"
-                value="garden"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Floresta"
-                value="forest"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Aqua"
-                value="aqua"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Lofi"
-                value="lofi"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Pastel"
-                value="pastel"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Fantasia"
-                value="fantasy"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Wireframe"
-                value="wireframe"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Preto"
-                value="black"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Luxo"
-                value="luxury"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Dracula"
-                value="dracula"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="CMYK"
-                value="cmyk"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Outono"
-                value="autumn"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Negócios"
-                value="business"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Ácido"
-                value="acid"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Limonada"
-                value="lemonade"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Noite"
-                value="night"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Café"
-                value="coffee"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Inverno"
-                value="winter"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Dim"
-                value="dim"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Nórdico"
-                value="nord"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Pôr do sol"
-                value="sunset"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Caramelo"
-                value="caramellatte"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Abismo"
-                value="abyss"
-            />
-        </li>
-        <li>
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                aria-label="Seda"
-                value="silk"
+                :aria-label=themeOption.label
+                :value=themeOption.value
+                :checked="themeOption.value === activeTheme"
+                v-on:click="() => activeTheme = themeOption.value"
             />
         </li>
     </ul>

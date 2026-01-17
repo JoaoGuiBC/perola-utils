@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { invoke } from '@tauri-apps/api/core'
-import { ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 
 import { tableSchema, RowSchemaType } from '@/schemas/register-files-table-schema'
 import { readXLSXFile } from '@/utils/xlsx-file-reader'
+import { getCurrentWebview } from '@tauri-apps/api/webview'
 
 const screenContent = ref<'none' | 'error' | 'info'>('none')
 
@@ -11,6 +12,8 @@ const errorMessage = ref("nada")
 
 const withoutRegisterList = ref<Array<string>>([])
 const notFoundRegisterList = ref<Array<string>>([])
+
+const isDragging = ref(false)
 
 interface RegisterResponseWithMessage {
     WithMessage: {
@@ -90,9 +93,47 @@ async function handleFileInput(event: InputEvent) {
     try {
         await readFile(file)
     } catch (error) {
+        errorMessage.value = "ERRO AO LER O ARQUIVO"
+        screenContent.value = 'error'
         console.error(error)
     }
 }
+
+let unlisten: (() => void) | null = null
+
+onMounted(async () => {
+    unlisten = await getCurrentWebview().onDragDropEvent(async event => {
+        if (event.payload.type === 'enter') {
+            isDragging.value = true
+        }
+        if (event.payload.type === 'leave') {
+            isDragging.value = false
+        }
+
+        if (event.payload.type === 'drop') {
+            isDragging.value = false
+            const filePath = event.payload.paths[0]
+
+            if (!filePath.endsWith('.xlsx')) {
+                errorMessage.value = "FORMATO DE ARQUIVO INVÁLIDO"
+                screenContent.value = 'error'
+                return
+            }
+
+            const { convertFileSrc } = await import('@tauri-apps/api/core')
+            const fileUrl = convertFileSrc(filePath)
+            const response = await fetch(fileUrl)
+            const blob = await response.blob()
+            const file = new File([blob], filePath.split('\\').pop() || 'file.xlsx')
+            
+            await readFile(file) 
+        }
+    })
+})
+
+onUnmounted(() => {
+    if (unlisten) unlisten()
+})
 </script>
 
 <template>
@@ -100,11 +141,20 @@ async function handleFileInput(event: InputEvent) {
         <h1 class="text-primary font-semibold text-lg drop-shadow-md drop-shadow-primary/30">BUSCADOR DE REGISTROS</h1>
 
         <fieldset class="fieldset mt-2 mb-3">
-            <legend class="fieldset-legend p-0">Selecione o .xlsx</legend>
+            <legend v-if="!isDragging" class="fieldset-legend p-0">
+                Selecione ou arraste o .xlsx
+            </legend>
+            <legend v-else class="fieldset-legend p-0">
+                Solte o arquivo
+            </legend>
+
             <input
                 type="file"
                 accept=".xlsx"
-                class="file-input file-input-neutral file-input-md w-84 drop-shadow-sm"
+                :class="[
+                    'file-input file-input-neutral file-input-md w-84 drop-shadow-sm transition-all',
+                    { 'border-dashed border-primary bg-primary/10': isDragging }
+                ]"
                 @input="(event) => handleFileInput(event)"
             />
         </fieldset>
