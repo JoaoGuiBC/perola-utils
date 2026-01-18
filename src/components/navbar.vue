@@ -11,7 +11,7 @@ const selectorMarginTop = computed(() => {
     if (route.value.path === ROUTES.REGISTER_FILE_GETTER) return 'top-[90px]'
 })
 const selectorClass = computed(
-    () => `absolute size-9 left-1/2 -translate-x-1/2 bg-primary/25 z-0 rounded-lg transition-all ${selectorMarginTop.value}`
+    () => `absolute size-9 left-1/2 -translate-x-1/2 bg-primary/25 z-0 rounded-field transition-all ${selectorMarginTop.value}`
 )
 </script>
 
