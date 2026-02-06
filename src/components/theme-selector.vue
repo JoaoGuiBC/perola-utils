@@ -42,7 +42,7 @@ const themeList = ref([
     { label: 'Pôr do sol', value: 'sunset' },
     { label: 'Caramelo', value: 'caramellatte' },
     { label: 'Abismo', value: 'abyss' },
-    { label: 'Seda', value: 'silk' }
+    { label: 'Seda', value: 'silk' },
 ])
 
 watch(activeTheme, async () => {
@@ -52,38 +52,40 @@ watch(activeTheme, async () => {
 
 onMounted(async () => {
     store = await load('settings.json')
-    const savedTheme = await store.get<string>('theme') || 'default'
+    const savedTheme = (await store.get<string>('theme')) || 'default'
 
     activeTheme.value = savedTheme
 
     document.documentElement.setAttribute('data-theme', savedTheme)
-    
+
     themeChange(false)
 })
 </script>
 
 <template>
-<div class="dropdown dropdown-center absolute z-30 right-4 top-3">
+    <div class="dropdown dropdown-center absolute z-30 right-4 top-3">
+        <div tabindex="0" role="button" class="btn m-1">
+            Tema
 
-    <div tabindex="0" role="button" class="btn m-1">
-        Tema
-        
-        <PhCaretDown />
+            <PhCaretDown />
+        </div>
+
+        <ul
+            tabindex="1"
+            class="dropdown-content bg-base-300 rounded-box z-1 w-fit p-1.5 shadow-2xl h-[64vh] overflow-auto"
+        >
+            <li v-for="themeOption in themeList" :key="themeOption.value">
+                <input
+                    data-choose-theme
+                    type="radio"
+                    name="theme-dropdown"
+                    class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
+                    :aria-label="themeOption.label"
+                    :value="themeOption.value"
+                    :checked="themeOption.value === activeTheme"
+                    v-on:click="() => (activeTheme = themeOption.value)"
+                />
+            </li>
+        </ul>
     </div>
-
-    <ul tabindex="1" class="dropdown-content bg-base-300 rounded-box z-1 w-fit p-1.5 shadow-2xl h-[64vh] overflow-auto">
-        <li v-for="themeOption in themeList">
-            <input
-                data-choose-theme
-                type="radio"
-                name="theme-dropdown"
-                class="theme-controller w-full btn btn-sm btn-block btn-ghost justify-center"
-                :aria-label=themeOption.label
-                :value=themeOption.value
-                :checked="themeOption.value === activeTheme"
-                v-on:click="() => activeTheme = themeOption.value"
-            />
-        </li>
-    </ul>
-</div>
 </template>

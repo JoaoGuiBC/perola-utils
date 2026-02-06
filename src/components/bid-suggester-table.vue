@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import TableRow from './table-row.vue'
+import TableRow from './bid-suggester-table-row.vue'
 
-import { RowSchemaType } from '../schemas/table-data-schema';
+import { RowSchemaType } from '../schemas/table-data-schema'
 
 const props = defineProps<{
     tableData: Array<RowSchemaType>
@@ -22,6 +22,7 @@ const props = defineProps<{
         <tbody>
             <TableRow
                 v-for="row in props.tableData"
+                :key="row.item"
                 :item="row.item"
                 :produto="row.produto"
                 :minimo="row.minimo"

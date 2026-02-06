@@ -8,7 +8,7 @@ const meBid = defineModel<number>('me-bid')
 const suggestedBid = computed(() => {
     if (!meBid.value) return ''
 
-    const suggestedBid = meBid.value - (meBid.value / 100 * 5.01)
+    const suggestedBid = meBid.value - (meBid.value / 100) * 5.01
 
     return currencyFormatter(suggestedBid)
 })
@@ -19,7 +19,7 @@ const suggestedBid = computed(() => {
         <h1 class="text-primary font-semibold text-lg mb-6 drop-shadow-md drop-shadow-primary/30">
             CALCULADORA DE LANCES REFERENTES A ME's
         </h1>
-    
+
         <div class="flex items-center justify-between w-56">
             <span>LANCE DA ME:</span>
             <input

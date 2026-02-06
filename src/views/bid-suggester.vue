@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import Table from '@/components/table.vue'
+import Table from '@/components/bid-suggester-table.vue'
 
 import { RowSchemaType, tableSchema } from '@/schemas/table-data-schema'
 import { readXLSXFile } from '@/utils/xlsx-file-reader'
@@ -11,7 +11,7 @@ const tableData = ref<Array<RowSchemaType>>([])
 async function readFile(file: File) {
     try {
         const xlsxData = await readXLSXFile(file)
-        const mappedData = xlsxData.map(row => {
+        const mappedData = xlsxData.map((row) => {
             return { item: row[1], produto: row[3], minimo: row[9] }
         })
 
@@ -30,11 +30,11 @@ async function readFile(file: File) {
 async function handleFileInput(event: InputEvent) {
     const target = event.target as HTMLInputElement
     const file = target.files?.[0]
-    
+
     if (!file) return
-    
+
     if (!file.name.endsWith('.xlsx')) {
-        return console.log("FORMATO DE ARQUIVO INVÁLIDO")
+        return console.log('FORMATO DE ARQUIVO INVÁLIDO')
     }
 
     try {
@@ -47,7 +47,9 @@ async function handleFileInput(event: InputEvent) {
 
 <template>
     <main class="flex flex-col items-center py-6 px-6 flex-1">
-        <h1 class="text-primary font-semibold text-lg drop-shadow-md drop-shadow-primary/30">SUGESTÕES DE LANCES FECHADOS</h1>
+        <h1 class="text-primary font-semibold text-lg drop-shadow-md drop-shadow-primary/30">
+            SUGESTÕES DE LANCES FECHADOS
+        </h1>
 
         <fieldset class="fieldset mt-2 mb-3">
             <legend class="fieldset-legend p-0">Selecione o .xlsx</legend>

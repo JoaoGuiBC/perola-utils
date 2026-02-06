@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { router, ROUTES } from '@/router'
 
-router.replace(ROUTES.CALCULATOR)
+router.replace(ROUTES[0].ROUTE_PATH)
 </script>
 
-<template>
-</template>
+<template>not_found</template>
