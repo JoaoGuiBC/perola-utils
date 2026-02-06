@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
+import { getCurrentWebview } from '@tauri-apps/api/webview'
 
 import { readFile, BatchedItems } from '@/utils/batch-adjustment-read-file'
 import { currencyFormatter } from '@/utils/currency-formatter'
@@ -54,6 +55,43 @@ function calculate() {
 
     itemsList.value = newValues
 }
+
+let unlisten: (() => void) | null = null
+
+onMounted(async () => {
+    unlisten = await getCurrentWebview().onDragDropEvent(async (event) => {
+        if (event.payload.type === 'enter') {
+            isDragging.value = true
+        }
+        if (event.payload.type === 'leave') {
+            isDragging.value = false
+        }
+
+        if (event.payload.type === 'drop') {
+            isDragging.value = false
+            const filePath = event.payload.paths[0]
+
+            if (!filePath.endsWith('.xlsx') && !filePath.endsWith('.xlsm')) {
+                errorMessage.value = 'FORMATO DE ARQUIVO INVÁLIDO'
+                screenContent.value = 'error'
+                return
+            }
+
+            const { convertFileSrc } = await import('@tauri-apps/api/core')
+            const fileUrl = convertFileSrc(filePath)
+            const response = await fetch(fileUrl)
+            const blob = await response.blob()
+            const file = new File([blob], filePath.split('\\').pop() || 'file.xlsx')
+
+            itemsList.value = await readFile(file, errorMessage, screenContent)
+            screenContent.value = 'success'
+        }
+    })
+})
+
+onUnmounted(() => {
+    if (unlisten) unlisten()
+})
 </script>
 
 <template>
