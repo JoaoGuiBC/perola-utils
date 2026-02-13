@@ -12,6 +12,7 @@
     "format": "prettier --write --experimental-cli src/"
   },
   "dependencies": {
+    "@libpdf/core": "^0.2.7",
     "@phosphor-icons/vue": "^2.2.1",
     "@tailwindcss/vite": "^4.1.16",
     "@tauri-apps/api": "^2",

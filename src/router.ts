@@ -1,6 +1,6 @@
 import { Component } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
-import { PhCalculator, PhClipboardText, PhArchive } from '@phosphor-icons/vue'
+import { PhCalculator, PhClipboardText, PhArchive, PhCalendarCheck } from '@phosphor-icons/vue'
 
 type RoutePath = `/${string}`
 
@@ -11,6 +11,11 @@ const ROUTES: Array<Route> = [
         ROUTE_PATH: '/calculator',
         ROUTE_FILE: () => import(/* @vite-ignore */ '@/views/bid-calculator.vue'),
         ROUTE_ICON: PhCalculator,
+    },
+    {
+        ROUTE_PATH: '/day-scheduler',
+        ROUTE_FILE: () => import(/* @vite-ignore */ '@/views/day-scheduler.vue'),
+        ROUTE_ICON: PhCalendarCheck,
     },
     {
         ROUTE_PATH: '/batch-adjustment',
