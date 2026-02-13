@@ -8,11 +8,19 @@ const props = defineProps<RowSchemaType>()
 
 const bestBid = defineModel<number>('best-bid')
 
-const formattedMinimum = computed(() => currencyFormatter(props.minimo))
+const formattedMinimum = computed(() => {
+    const formatted = currencyFormatter(props.minimo)
+    const numericValue = props.minimo.toFixed(4)
+    return formatted.replace(/[\d,]+\.?\d*/, numericValue.replace('.', ','))
+})
 const suggestedBid = computed(() => {
     if (!bestBid.value) return ''
 
     if (bestBid.value <= props.minimo) return currencyFormatter(props.minimo)
+
+    const percentageReduction = bestBid.value * 0.8
+
+    if (percentageReduction >= props.minimo) return currencyFormatter(percentageReduction)
 
     const halvedDifference = (bestBid.value - props.minimo) / 2
 
@@ -22,7 +30,7 @@ const suggestedBid = computed(() => {
 
 <template>
     <tr class="transition-colors hover:bg-base-200">
-        <td class="text-center select-none">
+        <td class="text-start select-none">
             <strong class="text-lg">{{ props.item }}</strong>
         </td>
 

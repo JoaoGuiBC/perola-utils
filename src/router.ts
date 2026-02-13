@@ -1,6 +1,6 @@
 import { Component } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
-import { PhCalculator, PhClipboardText, PhArchive } from '@phosphor-icons/vue'
+import { PhCalculator, PhClipboardText, PhArchive, PhCurrencyCircleDollar } from '@phosphor-icons/vue'
 
 type RoutePath = `/${string}`
 
@@ -17,11 +17,11 @@ const ROUTES: Array<Route> = [
         ROUTE_FILE: () => import(/* @vite-ignore */ '@/views/batch-adjustment.vue'),
         ROUTE_ICON: PhArchive,
     },
-    // {
-    //     ROUTE_PATH: '/bid-suggester',
-    //     ROUTE_FILE: () => import(/* @vite-ignore */ '@/views/bid-suggester.vue'),
-    //     ROUTE_ICON: PhCurrencyCircleDollar,
-    // },
+    {
+        ROUTE_PATH: '/bid-suggester',
+        ROUTE_FILE: () => import(/* @vite-ignore */ '@/views/bid-suggester.vue'),
+        ROUTE_ICON: PhCurrencyCircleDollar,
+    },
     {
         ROUTE_PATH: '/register-getter',
         ROUTE_FILE: () => import(/* @vite-ignore */ '@/views/register-files-getter.vue'),

@@ -7,20 +7,6 @@ const ROUTE_INDEX_MAP = new Map(ROUTES.map((route, index) => [route.ROUTE_PATH, 
 
 const { value: currentRoute } = computed(() => router.currentRoute)
 const selectorMarginTop = computed(() => {
-    // let size = 10
-
-    // ROUTES.forEach((route, index) => {
-    //     if (currentRoute.value.path === route.ROUTE_PATH) size = size + index * 40
-    // })
-
-    // return `top-[${size}px]`
-    // if (currentRoute.value.path === '/calculator') return 'top-[10px]'
-    // if (currentRoute.value.path === '/batch-adjustment') return 'top-[50px]'
-    // if (currentRoute.value.path === '/bid-suggester') return 'top-[90px]'
-    // if (currentRoute.value.path === '/register-getter') return 'top-[130px]'
-
-    // return 'top-[20px]'
-
     const routeIndex = ROUTE_INDEX_MAP.get(currentRoute.value.path as `/${string}`)
     const size = routeIndex !== undefined ? 10 + routeIndex * 40 : 10
 
