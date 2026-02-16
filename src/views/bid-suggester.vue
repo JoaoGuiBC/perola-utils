@@ -34,7 +34,7 @@ async function handleFileInput(event: InputEvent) {
     if (!file) return
 
     if (!file.name.endsWith('.xlsx')) {
-        return console.log('FORMATO DE ARQUIVO INVÁLIDO')
+        return console.error('FORMATO DE ARQUIVO INVÁLIDO')
     }
 
     try {

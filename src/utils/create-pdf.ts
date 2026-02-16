@@ -1,18 +1,8 @@
+import dayjs from 'dayjs'
 import { PDF } from '@libpdf/core'
 
 import { convertRGB } from './convert-rgb'
-
-export type Auction = {
-    municipio_uf: string
-    hora: string
-    plataforma: string
-    pe: string
-    validade_proposta: string
-    sistema: 'ABERTO' | 'ABERTO E FECHADO' | null
-    uasg: string | null
-    garantia: string | null
-    pede_amostra: 'NÃO' | 'SIM' | 'PODERÁ' | null
-}
+import { Auction } from '@/schemas/auction'
 
 const TOTAL_AUCTION_SLOTS = 5
 
@@ -28,7 +18,9 @@ const emptyAuction: Auction = {
     pede_amostra: null,
 }
 
-export async function createPDF(auctions: Auction[]) {
+export async function createPDF(auctions: Auction[], scheduleDate: Date) {
+    const date = dayjs(scheduleDate).add(5, 'hour')
+
     const paddedAuctions: Auction[] = [
         ...auctions,
         ...Array.from({ length: Math.max(0, TOTAL_AUCTION_SLOTS - auctions.length) }, () => ({
@@ -87,6 +79,36 @@ export async function createPDF(auctions: Auction[]) {
         font: textFont,
     })
 
+    page.drawText(`${date.format('DD')}`, {
+        x: 90,
+        y: 714,
+        size: 16,
+        maxWidth: 531,
+        alignment: 'center',
+        color: convertRGB(255, 255, 255),
+        font: textFont,
+    })
+
+    page.drawText(`${date.format('MM')}`, {
+        x: 125.5,
+        y: 714,
+        size: 16,
+        maxWidth: 531,
+        alignment: 'center',
+        color: convertRGB(255, 255, 255),
+        font: textFont,
+    })
+
+    page.drawText(`${date.format('YY')}`, {
+        x: 160,
+        y: 714,
+        size: 16,
+        maxWidth: 531,
+        alignment: 'center',
+        color: convertRGB(255, 255, 255),
+        font: textFont,
+    })
+
     page.drawRectangle({
         x: 329,
         y: 715,
@@ -117,7 +139,7 @@ export async function createPDF(auctions: Auction[]) {
             font: textFont,
         })
 
-        page.drawText(pe.municipio_uf, {
+        page.drawText(pe.municipio_uf ?? '', {
             x: 95,
             y: 699 - reductionValue,
             size: 8,
@@ -136,7 +158,7 @@ export async function createPDF(auctions: Auction[]) {
             font: textFont,
         })
 
-        page.drawText(pe.pe, {
+        page.drawText(pe.pe ?? '', {
             x: 298,
             y: 699 - reductionValue,
             size: 8,
@@ -165,7 +187,7 @@ export async function createPDF(auctions: Auction[]) {
             font: textFont,
         })
 
-        page.drawText(pe.hora, {
+        page.drawText(pe.hora ?? '', {
             x: 72,
             y: 684 - reductionValue,
             size: 8,
@@ -184,7 +206,7 @@ export async function createPDF(auctions: Auction[]) {
             font: textFont,
         })
 
-        page.drawText(pe.validade_proposta, {
+        page.drawText(pe.validade_proposta ?? '', {
             x: 400,
             y: 684 - reductionValue,
             size: 8,
@@ -234,7 +256,7 @@ export async function createPDF(auctions: Auction[]) {
             font: textFont,
         })
 
-        page.drawText(pe.plataforma, {
+        page.drawText(pe.plataforma ?? '', {
             x: 105,
             y: 669 - reductionValue,
             size: 8,

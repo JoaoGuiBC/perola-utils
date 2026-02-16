@@ -40,9 +40,6 @@ export async function readFile(
 
         const { success, data } = tableSchema.safeParse(mappedData)
 
-        console.log(success)
-        console.log(data)
-
         if (!success) {
             errorMessage.value = 'FALHA AO AJUSTAR DADOS DO ARQUIVO'
             screenContent.value = 'error'
@@ -83,8 +80,6 @@ export async function readFile(
 
             return acc
         }, [] as Array<BatchedItems>)
-
-        console.log(batchedItems)
 
         return batchedItems
     } catch (error) {

@@ -45,6 +45,10 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VITE_LLM_EXTRACTOR_PROVIDER: ${{ secrets.VITE_LLM_EXTRACTOR_PROVIDER }}
+          VITE_LLM_EXTRACTOR_API_KEY: ${{ secrets.VITE_LLM_EXTRACTOR_API_KEY }}
+          VITE_LLM_EXTRACTOR_MODEL: ${{ secrets.VITE_LLM_EXTRACTOR_MODEL }}
+          VITE_LLM_EXTRACTOR_PROMPT: ${{ secrets.VITE_LLM_EXTRACTOR_PROMPT }}
         with:
           tagName: ${{ github.event.inputs.version || github.ref_name }}
           releaseName: 'Release ${{ github.event.inputs.version || github.ref_name }}'
