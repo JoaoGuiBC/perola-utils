@@ -1,15 +1,17 @@
 import z from 'zod'
 
+const toUpperCase = (val: unknown) => (typeof val === 'string' ? val.toUpperCase() : val)
+
 export const auctionSchema = z.object({
     municipio_uf: z.string().nullable(),
     hora: z.string().nullable(),
     plataforma: z.string().nullable(),
     pe: z.string().nullable(),
     validade_proposta: z.string().nullable(),
-    sistema: z.enum(['ABERTO', 'ABERTO E FECHADO']).nullable(),
+    sistema: z.preprocess(toUpperCase, z.enum(['ABERTO', 'ABERTO E FECHADO']).nullable()),
     uasg: z.string().nullable(),
     garantia: z.string().nullable(),
-    pede_amostra: z.enum(['NÃO', 'SIM', 'PODERÁ']).nullable(),
+    pede_amostra: z.preprocess(toUpperCase, z.enum(['NÃO', 'SIM', 'PODERÁ']).nullable()),
 })
 
 export type Auction = {

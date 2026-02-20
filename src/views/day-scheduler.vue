@@ -2,6 +2,7 @@
 import 'cally'
 
 import { onMounted, onUnmounted, ref } from 'vue'
+import { getCurrentWebview } from '@tauri-apps/api/webview'
 
 import { extractEditalData } from '@/utils/llm-extractor'
 import { createPDF } from '@/utils/create-pdf'
@@ -9,7 +10,6 @@ import { createPDF } from '@/utils/create-pdf'
 import { Auction, auctionSchema } from '@/schemas/auction'
 
 import SchedulerCalendar from '@/components/scheduler-calendar.vue'
-import { getCurrentWebview } from '@tauri-apps/api/webview'
 import SchedulerFileStat from '@/components/scheduler-file-stat.vue'
 
 const isDragging = ref(false)
@@ -37,14 +37,21 @@ async function createSchedule() {
         const { success, data } = auctionSchema.safeParse(response)
 
         if (!success) {
-            parsingErrors.value = [...parsingErrors.value, { index, fileName: file.name }]
+            parsingErrors.value = [
+                ...parsingErrors.value,
+                { index: index + 1, fileName: file.name },
+            ]
             continue
         }
 
         auctions.value = [...auctions.value, data]
     }
 
-    if (auctions.value.length >= 0) await createPDF(auctions.value, new Date(scheduleDate.value))
+    if (auctions.value.length > 0) await createPDF(auctions.value, new Date(scheduleDate.value))
+
+    selectedFiles.value = []
+    auctions.value = []
+    scheduleDate.value = ''
 
     currentProcessingFile.value = 0
     isLoading.value = false
@@ -103,7 +110,7 @@ onMounted(async () => {
 
                         return new File(
                             [blob],
-                            path.split('/').pop() || `edital_${index + 1}.pdf`,
+                            path.split(/[/\\]/).pop() || `edital_${index + 1}.pdf`,
                             { type: 'application/pdf' },
                         )
                     }),
