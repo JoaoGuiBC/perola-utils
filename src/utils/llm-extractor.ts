@@ -16,12 +16,12 @@ async function fileToBase64(file: File): Promise<string> {
     )
 }
 
-export async function extractEditalData(file: File) {
+export async function extractEditalData(file: File, prompt: string) {
     const config: LLMConfig = {
         provider: env.VITE_LLM_EXTRACTOR_PROVIDER,
         apiKey: env.VITE_LLM_EXTRACTOR_API_KEY,
         model: env.VITE_LLM_EXTRACTOR_MODEL,
-        prompt: env.VITE_LLM_EXTRACTOR_PROMPT,
+        prompt,
     }
 
     const base64 = await fileToBase64(file)

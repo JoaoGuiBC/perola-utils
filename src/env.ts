@@ -6,7 +6,6 @@ const envSchema = z.object({
     VITE_LLM_EXTRACTOR_PROVIDER: z.enum(PROVIDERS),
     VITE_LLM_EXTRACTOR_API_KEY: z.string(),
     VITE_LLM_EXTRACTOR_MODEL: z.string(),
-    VITE_LLM_EXTRACTOR_PROMPT: z.string(),
 })
 
 function validateEnv() {
