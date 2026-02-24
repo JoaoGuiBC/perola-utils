@@ -78,7 +78,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <main class="flex flex-col items-center py-6 px-6 flex-1">
+    <main class="flex flex-col items-center py-6 px-4 flex-1">
         <h1 class="text-primary font-semibold text-lg drop-shadow-md drop-shadow-primary/30">
             BUSCADOR DE REGISTROS
         </h1>

@@ -95,7 +95,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <main class="flex flex-col items-center pt-6 pb-10 px-6 flex-1 max-h-screen">
+    <main class="flex flex-col items-center pt-6 pb-10 px-4 flex-1 max-h-screen">
         <h1 class="text-primary font-semibold text-lg drop-shadow-md drop-shadow-primary/30">
             AJUSTE DE LOTE
         </h1>

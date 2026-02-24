@@ -59,6 +59,16 @@
     --font-display: 'Inter Tight', sans-serif;
 }
 
+html {
+  font-size: 100%;
+}
+
+@media (max-width: 500px) {
+  html {
+    font-size: 87.5%;
+  }
+}
+
 body {
     scrollbar-gutter: stable both-edges;
 }

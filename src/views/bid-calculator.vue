@@ -15,7 +15,7 @@ const suggestedBid = computed(() => {
 </script>
 
 <template>
-    <main class="flex flex-col items-center gap-4 py-6 px-8 flex-1">
+    <main class="flex flex-col items-center gap-4 py-6 px-4 flex-1">
         <h1 class="text-primary font-semibold text-lg mb-6 drop-shadow-md drop-shadow-primary/30">
             CALCULADORA DE LANCES REFERENTES A ME's
         </h1>

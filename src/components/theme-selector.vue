@@ -64,7 +64,7 @@ onMounted(async () => {
 
 <template>
     <div class="dropdown dropdown-center absolute z-30 right-4 top-3">
-        <div tabindex="0" role="button" class="btn m-1">
+        <div tabindex="0" role="button" class="btn m-1 bg-base-200/85">
             Tema
 
             <PhCaretDown />
