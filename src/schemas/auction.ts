@@ -1,27 +1,31 @@
-import z from 'zod'
+import z, { type ZodNullable } from 'zod'
 
-const toUpperCase = (val: unknown) => (typeof val === 'string' ? val.toUpperCase() : val)
+import {
+    normalizeSistema,
+    toUpperCase,
+    parsePlatformName,
+    roundHour,
+} from '@/utils/auction-schema-functions'
+
+const isProd = !import.meta.env.DEV
+
+function catchable<T extends z.ZodType>(schema: ZodNullable<T>) {
+    return isProd ? schema.catch(null) : schema
+}
 
 export const auctionSchema = z.object({
-    municipio_uf: z.string().nullable(),
-    hora: z.string().nullable(),
-    plataforma: z.string().nullable(),
-    pe: z.string().nullable(),
-    validade_proposta: z.string().nullable(),
-    sistema: z.preprocess(toUpperCase, z.enum(['ABERTO', 'ABERTO E FECHADO']).nullable()),
-    uasg: z.string().nullable(),
-    garantia: z.string().nullable(),
-    pede_amostra: z.preprocess(toUpperCase, z.enum(['NÃO', 'SIM', 'PODERÁ']).nullable()),
+    municipio_uf: catchable(z.string().nullable()),
+    hora: z.preprocess(roundHour, catchable(z.string().nullable())),
+    plataforma: z.preprocess(parsePlatformName, catchable(z.string().nullable())),
+    pe: catchable(z.string().nullable()),
+    validade_proposta: catchable(z.string().nullable()),
+    sistema: z.preprocess(
+        normalizeSistema,
+        catchable(z.enum(['ABERTO', 'ABERTO E FECHADO']).nullable()),
+    ),
+    uasg: catchable(z.string().nullable()),
+    garantia: catchable(z.string().nullable()),
+    pede_amostra: z.preprocess(toUpperCase, catchable(z.enum(['NÃO', 'SIM', 'PODERÁ']).nullable())),
 })
 
-export type Auction = {
-    municipio_uf: string | null
-    hora: string | null
-    plataforma: string | null
-    pe: string | null
-    validade_proposta: string | null
-    sistema: 'ABERTO' | 'ABERTO E FECHADO' | null
-    uasg: string | null
-    garantia: string | null
-    pede_amostra: 'NÃO' | 'SIM' | 'PODERÁ' | null
-}
+export type Auction = z.infer<typeof auctionSchema>

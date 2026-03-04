@@ -19,6 +19,42 @@ const emptyAuction: Auction = {
 }
 
 export async function createPDF(auctions: Auction[], scheduleDate: Date) {
+    const pdf = PDF.create()
+
+    let currentAuctionIndex = 0
+    const splitAuctions = auctions.reduce(
+        (acc: Array<Auction[]>, cur) => {
+            if (acc[currentAuctionIndex].length === 5) {
+                acc.push([cur])
+                currentAuctionIndex++
+            } else {
+                acc[currentAuctionIndex].push(cur)
+            }
+
+            return acc
+        },
+        [[]],
+    )
+
+    for (const auctionArray of splitAuctions) {
+        await createPage(auctionArray, scheduleDate, pdf)
+    }
+
+    pdf.setTitle('PROGRAMAÇÃO DO DIA')
+
+    const bytes = await pdf.save()
+    const blob = new Blob([bytes as BlobPart], { type: 'application/pdf' })
+    const url = URL.createObjectURL(blob)
+
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'PROGRAMAÇÃO DO DIA.pdf'
+    link.click()
+
+    URL.revokeObjectURL(url)
+}
+
+async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
     const date = dayjs(scheduleDate).add(5, 'hour')
 
     const paddedAuctions: Auction[] = [
@@ -28,7 +64,6 @@ export async function createPDF(auctions: Auction[], scheduleDate: Date) {
         })),
     ]
 
-    const pdf = PDF.create()
     const page = pdf.addPage({ size: 'a4' })
 
     const headerFontResponse = await fetch('/WDXLLubrifontTC-Regular.ttf')
@@ -511,17 +546,4 @@ export async function createPDF(auctions: Auction[], scheduleDate: Date) {
             thickness: 1,
         })
     })
-
-    pdf.setTitle('PROGRAMAÇÃO DO DIA')
-
-    const bytes = await pdf.save()
-    const blob = new Blob([bytes as BlobPart], { type: 'application/pdf' })
-    const url = URL.createObjectURL(blob)
-
-    const link = document.createElement('a')
-    link.href = url
-    link.download = 'PROGRAMAÇÃO DO DIA.pdf'
-    link.click()
-
-    URL.revokeObjectURL(url)
 }

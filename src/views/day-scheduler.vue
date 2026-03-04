@@ -87,15 +87,10 @@ function handleFileInput(event: InputEvent) {
 }
 
 function handleInsertFile(files: Array<File>) {
-    let pdfCounter = selectedFiles.value.length
-
     for (const file of files) {
-        if (pdfCounter >= 5) break
-
         if (file.type !== 'application/pdf') continue
 
         selectedFiles.value = [...selectedFiles.value, file]
-        pdfCounter++
     }
 }
 
