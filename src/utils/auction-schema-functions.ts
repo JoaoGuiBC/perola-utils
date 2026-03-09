@@ -3,6 +3,10 @@ const platformStringRules = [
         match: (s: string) => s === 'Portal de Compras Públicas',
         transform: () => 'Compras Públicas',
     },
+    {
+        match: (s: string) => s === 'Licitar Digital',
+        transform: () => 'Licitar',
+    },
 ] as const
 
 export const parsePlatformName = (val: unknown): unknown | string => {
@@ -53,4 +57,15 @@ export const normalizeSistema = (val: unknown) => {
     if (upper === 'ABERTA') return 'ABERTO'
 
     return upper
+}
+
+export function normalizeCityKey(val: unknown) {
+    if (typeof val === 'object' && val !== null && !Array.isArray(val)) {
+        const obj = val as Record<string, unknown>
+        if ('municipio' in obj && !('municipio_uf' in obj)) {
+            const { municipio, ...rest } = obj
+            return { municipio_uf: municipio, ...rest }
+        }
+    }
+    return val
 }

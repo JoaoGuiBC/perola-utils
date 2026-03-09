@@ -16,47 +16,55 @@ async function fileToBase64(file: File): Promise<string> {
     )
 }
 
-export async function extractEditalData(file: File, prompt: string) {
-    const config: LLMConfig = {
-        provider: env.VITE_LLM_EXTRACTOR_PROVIDER,
-        apiKey: env.VITE_LLM_EXTRACTOR_API_KEY,
-        model: env.VITE_LLM_EXTRACTOR_MODEL,
-        prompt,
-    }
+export async function extractEditalData(file: File, prompt: string, model: string) {
+    try {
+        const config: LLMConfig = {
+            provider: env.VITE_LLM_EXTRACTOR_PROVIDER,
+            apiKey: env.VITE_LLM_EXTRACTOR_API_KEY,
+            model,
+            prompt,
+        }
 
-    const base64 = await fileToBase64(file)
+        const base64 = await fileToBase64(file)
 
-    switch (config.provider) {
-        case 'gemini':
-            return callGemini(base64, config)
-        case 'openai':
-            return callOpenAI()
-        case 'anthropic':
-            return callAnthropic(base64, config)
+        switch (config.provider) {
+            case 'gemini':
+                return callGemini(base64, config)
+            case 'openai':
+                return callOpenAI()
+            case 'anthropic':
+                return callAnthropic(base64, config)
+        }
+    } catch (error) {
+        throw error
     }
 }
 
 async function callGemini(base64: string, { apiKey, model, prompt }: LLMConfig) {
-    const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-        {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [
-                    {
-                        parts: [
-                            { text: prompt },
-                            { inlineData: { mimeType: 'application/pdf', data: base64 } },
-                        ],
-                    },
-                ],
-                generationConfig: { responseMimeType: 'application/json' },
-            }),
-        },
-    )
-    const data = await res.json()
-    return JSON.parse(data.candidates[0].content.parts[0].text)
+    try {
+        const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [
+                        {
+                            parts: [
+                                { text: prompt },
+                                { inlineData: { mimeType: 'application/pdf', data: base64 } },
+                            ],
+                        },
+                    ],
+                    generationConfig: { responseMimeType: 'application/json' },
+                }),
+            },
+        )
+        const data = await res.json()
+        return JSON.parse(data.candidates[0].content.parts[0].text)
+    } catch {
+        throw new Error('erro ao ler arquivo, tente novamente mais tarde ou tente trocar de modelo')
+    }
 }
 
 async function callAnthropic(base64: string, { apiKey, model, prompt }: LLMConfig) {

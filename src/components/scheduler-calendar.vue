@@ -20,7 +20,7 @@ function handleDateSelect(event: Event) {
 </script>
 
 <template>
-    <div class="relative inline-block transition-all">
+    <div class="relative inline-block transition-all mt-2">
         <button class="input input-border cursor-pointer w-[284px]" @click="toggleCalendar">
             <span class="w-full text-center cursor-pointer font-medium">
                 {{ scheduleDate ? formatDate(new Date(scheduleDate)) : 'SELECIONE O DIA' }}

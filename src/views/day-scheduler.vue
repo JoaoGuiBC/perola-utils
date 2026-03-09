@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import 'cally'
 
-import { PhCheck, PhX } from '@phosphor-icons/vue'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 
 import { getCurrentWebview } from '@tauri-apps/api/webview'
-import { load, Store } from '@tauri-apps/plugin-store'
 
 import { extractEditalData } from '@/utils/llm-extractor'
 import { createPDF } from '@/utils/create-pdf'
@@ -14,52 +12,73 @@ import { Auction, auctionSchema } from '@/schemas/auction'
 
 import SchedulerCalendar from '@/components/scheduler-calendar.vue'
 import SchedulerFileStat from '@/components/scheduler-file-stat.vue'
-import UpdatePromptModal from '@/components/update-prompt-modal.vue'
-
-let store: Store
+import DaySchedulerAiSection from '@/components/day-scheduler-ai-section.vue'
 
 const isDragging = ref(false)
 const selectedFiles = ref<Array<File>>([])
-const parsingErrors = ref<Array<{ index: number; fileName: string }>>([])
+const parsingErrors = ref<Array<{ index: number; fileName: string; error: string }>>([])
 const isLoading = ref(false)
 const currentProcessingFile = ref(0)
 const auctions = ref<Array<Auction>>([])
-const isPromptModalOpen = ref(false)
 
 const prompt = defineModel('prompt', { type: String, default: '' })
 const scheduleDate = defineModel('scheduleDate', { type: String, default: '' })
-
-const promptCheckStyles = computed(() => {
-    if (prompt.value)
-        return 'flex items-center justify-center gap-1 transition-all cursor-default text-xs font-semibold text-success drop-shadow-sm drop-shadow-success/60'
-
-    return 'flex items-center justify-center gap-1 transition-all cursor-default text-xs font-semibold text-error drop-shadow-sm drop-shadow-error/60'
-})
+const currentModel = defineModel('currentModel', { type: String, default: '' })
+const currentModelError = defineModel('currentModelError', { type: Boolean, default: false })
 
 async function createSchedule() {
+    if (!currentModel.value) {
+        currentModelError.value = true
+        return
+    } else {
+        currentModelError.value = false
+    }
+
+    console.log(scheduleDate.value)
+    console.log(selectedFiles.value.length)
+    console.log(prompt.value)
     if (!scheduleDate.value || selectedFiles.value.length === 0 || !prompt.value) return
 
     isLoading.value = true
 
     for (const i in selectedFiles.value) {
-        const index = Number(i)
-        const file = selectedFiles.value[index]
+        try {
+            const index = Number(i)
+            const file = selectedFiles.value[index]
 
-        currentProcessingFile.value = index + 1
+            currentProcessingFile.value = index + 1
 
-        const response = await extractEditalData(file, prompt.value)
+            const response = await extractEditalData(file, prompt.value, currentModel.value)
 
-        const { success, data } = auctionSchema.safeParse(response)
+            const { success, data, error } = auctionSchema.safeParse(response)
 
-        if (!success) {
+            console.log(response)
+            console.log(error)
+
+            if (!success) {
+                parsingErrors.value = [
+                    ...parsingErrors.value,
+                    {
+                        index: index + 1,
+                        fileName: file.name,
+                        error: 'IA RETORNOU DADOS EM FORMATO NÃO RECONHECIDO',
+                    },
+                ]
+                continue
+            }
+
+            auctions.value = [...auctions.value, data]
+        } catch (error: unknown) {
+            const parsedError = error as Error
+            const index = Number(i)
+            const file = selectedFiles.value[index]
+
             parsingErrors.value = [
                 ...parsingErrors.value,
-                { index: index + 1, fileName: file.name },
+                { index: index + 1, fileName: file.name, error: parsedError.message },
             ]
             continue
         }
-
-        auctions.value = [...auctions.value, data]
     }
 
     if (auctions.value.length > 0) await createPDF(auctions.value, new Date(scheduleDate.value))
@@ -70,11 +89,6 @@ async function createSchedule() {
 
     currentProcessingFile.value = 0
     isLoading.value = false
-}
-
-async function updatePrompt() {
-    await store.set('prompt', prompt.value)
-    await store.save()
 }
 
 function handleFileInput(event: InputEvent) {
@@ -101,11 +115,6 @@ function handleRemoveFile(fileIndex: number) {
 let unlisten: (() => void) | null = null
 
 onMounted(async () => {
-    store = await load('settings.json')
-    const savedPrompt = (await store.get<string>('prompt')) || ''
-
-    prompt.value = savedPrompt
-
     unlisten = await getCurrentWebview().onDragDropEvent(async (event) => {
         if (event.payload.type === 'enter') {
             isDragging.value = true
@@ -171,17 +180,11 @@ onUnmounted(() => {
             />
         </fieldset>
 
-        <span :class="promptCheckStyles">
-            <template v-if="prompt">PROMPT ENCONTRADO <PhCheck weight="bold" /></template>
-            <template v-else>PROMPT NÃO ENCONTRADO <PhX weight="bold" /></template>
-            <button
-                type="button"
-                class="cursor-pointer text-[0.64rem] opacity-70"
-                @click="isPromptModalOpen = true"
-            >
-                - ATUALIZAR
-            </button>
-        </span>
+        <DaySchedulerAiSection
+            v-model:prompt="prompt"
+            v-model:current-model="currentModel"
+            v-model:current-model-error="currentModelError"
+        />
 
         <SchedulerCalendar v-model="scheduleDate" />
 
@@ -214,22 +217,16 @@ onUnmounted(() => {
 
         <div
             v-if="parsingErrors.length > 0"
-            class="flex flex-col items-center justify-center max-w-xs mt-5 border border-error bg-error/15 p-2 rounded-box shadow-lg"
+            class="flex flex-col items-center justify-center max-w-md mt-5 border border-error bg-error/15 p-2 rounded-box shadow-lg"
         >
             <strong class="text-xs mb-1 text-center text-error">
-                IA RETORNOU AS INFORMAÇÕES NO FORMATO ERRADO PARA OS SEGUINTES ARQUIVOS:
+                OCORREU ERRO NOS SEGUINTES ARQUIVOS:
             </strong>
-            <p v-for="file in parsingErrors" :key="file.index" class="text-xs">
-                ARQUIVO {{ file.index }} - {{ file.fileName }}
+            <p class="text-xs mb-1 last:mb-0" v-for="file in parsingErrors" :key="file.index">
+                ARQUIVO {{ file.index }} - {{ file.fileName }}: {{ file.error }}
             </p>
         </div>
     </main>
-
-    <UpdatePromptModal
-        v-model:open="isPromptModalOpen"
-        :update-prompt-function="updatePrompt"
-        v-model:prompt="prompt"
-    />
 </template>
 
 <style lang="css" scoped>
