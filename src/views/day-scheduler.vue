@@ -34,9 +34,6 @@ async function createSchedule() {
         currentModelError.value = false
     }
 
-    console.log(scheduleDate.value)
-    console.log(selectedFiles.value.length)
-    console.log(prompt.value)
     if (!scheduleDate.value || selectedFiles.value.length === 0 || !prompt.value) return
 
     isLoading.value = true
@@ -50,10 +47,7 @@ async function createSchedule() {
 
             const response = await extractEditalData(file, prompt.value, currentModel.value)
 
-            const { success, data, error } = auctionSchema.safeParse(response)
-
-            console.log(response)
-            console.log(error)
+            const { success, data } = auctionSchema.safeParse(response)
 
             if (!success) {
                 parsingErrors.value = [

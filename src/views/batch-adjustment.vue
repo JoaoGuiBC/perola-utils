@@ -2,7 +2,8 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 import { getCurrentWebview } from '@tauri-apps/api/webview'
 
-import { readFile, BatchedItems } from '@/utils/batch-adjustment-read-file'
+import { readFile, ReadFileError, BatchedItems } from '@/utils/batch-adjustment-read-file'
+import { calculateBatchAdjustment } from '@/utils/batch-adjustment-calculate'
 import { currencyFormatter } from '@/utils/currency-formatter'
 
 const isDragging = ref(false)
@@ -10,27 +11,40 @@ const screenContent = ref<'error' | 'success' | undefined>()
 const errorMessage = ref('')
 const formMessage = ref('')
 const itemsList = ref<Array<BatchedItems>>([])
+const decimalPlaces = defineModel('decimalPlaces', { type: Number, default: 4 })
+
+function validareDecimalPLaces() {
+    if (decimalPlaces.value < 2) decimalPlaces.value = 2
+    if (decimalPlaces.value > 4) decimalPlaces.value = 4
+}
+
+function isValidFile(fileName: string): boolean {
+    return fileName.endsWith('.xlsx') || fileName.endsWith('.xlsm')
+}
+
+async function processFile(file: File) {
+    try {
+        itemsList.value = await readFile(file)
+        screenContent.value = 'success'
+    } catch (error) {
+        errorMessage.value =
+            error instanceof ReadFileError ? error.message : 'ERRO AO LER O ARQUIVO'
+        screenContent.value = 'error'
+        console.error(error)
+    }
+}
 
 async function handleFileInput(event: InputEvent) {
-    const target = event.target as HTMLInputElement
-    const file = target.files?.[0]
-
+    const file = (event.target as HTMLInputElement).files?.[0]
     if (!file) return
 
-    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xlsm')) {
+    if (!isValidFile(file.name)) {
         errorMessage.value = 'FORMATO DE ARQUIVO INVÁLIDO'
         screenContent.value = 'error'
         return
     }
 
-    try {
-        itemsList.value = await readFile(file, errorMessage, screenContent)
-        screenContent.value = 'success'
-    } catch (error) {
-        errorMessage.value = 'ERRO AO LER O ARQUIVO'
-        screenContent.value = 'error'
-        console.error(error)
-    }
+    await processFile(file)
 }
 
 function calculate() {
@@ -39,39 +53,24 @@ function calculate() {
         return
     }
 
-    const newValues = itemsList.value.map((batch) => {
-        const ratio = batch.wonPrice / batch.originalPrice
-
-        const newBatchValue = batch.items.map((item) => {
-            return {
-                ...item,
-                unityWonPrice: item.unityOriginalPrice * ratio,
-                totalWonPrice: item.totalOriginalPrice * ratio,
-            }
-        })
-
-        return { ...batch, items: newBatchValue }
+    formMessage.value = ''
+    itemsList.value = calculateBatchAdjustment(itemsList.value, {
+        decimalPlaces: decimalPlaces.value,
     })
-
-    itemsList.value = newValues
 }
 
 let unlisten: (() => void) | null = null
 
 onMounted(async () => {
     unlisten = await getCurrentWebview().onDragDropEvent(async (event) => {
-        if (event.payload.type === 'enter') {
-            isDragging.value = true
-        }
-        if (event.payload.type === 'leave') {
-            isDragging.value = false
-        }
+        if (event.payload.type === 'enter') isDragging.value = true
+        if (event.payload.type === 'leave') isDragging.value = false
 
         if (event.payload.type === 'drop') {
             isDragging.value = false
             const filePath = event.payload.paths[0]
 
-            if (!filePath.endsWith('.xlsx') && !filePath.endsWith('.xlsm')) {
+            if (!isValidFile(filePath)) {
                 errorMessage.value = 'FORMATO DE ARQUIVO INVÁLIDO'
                 screenContent.value = 'error'
                 return
@@ -83,8 +82,7 @@ onMounted(async () => {
             const blob = await response.blob()
             const file = new File([blob], filePath.split('\\').pop() || 'file.xlsx')
 
-            itemsList.value = await readFile(file, errorMessage, screenContent)
-            screenContent.value = 'success'
+            await processFile(file)
         }
     })
 })
@@ -124,7 +122,20 @@ onUnmounted(() => {
 
         <section class="flex flex-col flex-1 h-[82%]" v-if="screenContent === 'success'">
             <div class="flex w-full items-center justify-end mb-2 gap-2">
-                <span v-if="formMessage" class="text-xs text-error">{{ formMessage }}</span>
+                <span v-if="formMessage" class="text-xs text-error mr-1">{{ formMessage }}</span>
+
+                <div class="flex flex-col items-center justify-center gap-0 w-fit">
+                    <span class="text-2xs leading-2 z-20 text-primary">casas decimais</span>
+                    <input
+                        type="number"
+                        min="2"
+                        max="4"
+                        class="input input-xs w-18 text-center"
+                        v-model.number="decimalPlaces"
+                        @blur="validareDecimalPLaces"
+                    />
+                </div>
+
                 <button type="button" class="btn btn-sm btn-soft btn-primary" @click="calculate">
                     CALCULAR
                 </button>
