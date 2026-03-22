@@ -36,3 +36,11 @@ export const auctionSchema = z.preprocess(
 )
 
 export type Auction = z.infer<typeof auctionSchema>
+
+export type AuctionFullInfo = Omit<Auction, 'garantia' | 'sistema' | 'pede_amostra'> & {
+    garantia: boolean
+    sistema: 'ABERTO' | 'ABERTO E FECHADO' | null
+    pede_amostra: 'SIM' | 'NÃO' | 'PODERÁ' | null
+    produtos_ofertados: Array<string>
+    docs: boolean
+}

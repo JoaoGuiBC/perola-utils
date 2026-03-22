@@ -2,11 +2,21 @@ import dayjs from 'dayjs'
 import { PDF } from '@libpdf/core'
 
 import { convertRGB } from './convert-rgb'
-import { Auction } from '@/schemas/auction'
+import { type AuctionFullInfo } from '@/schemas/auction'
 
 const TOTAL_AUCTION_SLOTS = 5
 
-const emptyAuction: Auction = {
+const COLORS = {
+    WHITE: convertRGB(255, 255, 255),
+    BLACK: convertRGB(0, 0, 0),
+    RED: convertRGB(240, 64, 64),
+    SOFT_BLUE: convertRGB(217, 226, 243),
+    BLUE: convertRGB(142, 170, 219),
+    DARK_BLUE: convertRGB(68, 114, 196),
+    DARKEST_BLUE: convertRGB(31, 56, 100),
+}
+
+const emptyAuction: AuctionFullInfo = {
     municipio_uf: '',
     hora: '',
     plataforma: '',
@@ -14,16 +24,20 @@ const emptyAuction: Auction = {
     validade_proposta: '',
     sistema: null,
     uasg: null,
-    garantia: null,
+    garantia: false,
     pede_amostra: null,
+    produtos_ofertados: [],
+    docs: false,
 }
 
-export async function createPDF(auctions: Auction[], scheduleDate: Date) {
+export async function createPDF(auctions: AuctionFullInfo[], scheduleDate: Date) {
+    const date = dayjs(scheduleDate).add(5, 'hour')
+
     const pdf = PDF.create()
 
     let currentAuctionIndex = 0
     const splitAuctions = auctions.reduce(
-        (acc: Array<Auction[]>, cur) => {
+        (acc: Array<AuctionFullInfo[]>, cur) => {
             if (acc[currentAuctionIndex].length === 5) {
                 acc.push([cur])
                 currentAuctionIndex++
@@ -33,14 +47,16 @@ export async function createPDF(auctions: Auction[], scheduleDate: Date) {
 
             return acc
         },
-        [[]],
+        [[]] as AuctionFullInfo[][],
     )
 
     for (const auctionArray of splitAuctions) {
-        await createPage(auctionArray, scheduleDate, pdf)
+        await createPage(auctionArray, date, pdf)
     }
 
-    pdf.setTitle('PROGRAMAÇÃO DO DIA')
+    const pdfName = `PROGRAMAÇÃO DO DIA ${date.format('DD-MM')}`
+
+    pdf.setTitle(pdfName)
 
     const bytes = await pdf.save()
     const blob = new Blob([bytes as BlobPart], { type: 'application/pdf' })
@@ -48,16 +64,14 @@ export async function createPDF(auctions: Auction[], scheduleDate: Date) {
 
     const link = document.createElement('a')
     link.href = url
-    link.download = 'PROGRAMAÇÃO DO DIA.pdf'
+    link.download = pdfName
     link.click()
 
     URL.revokeObjectURL(url)
 }
 
-async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
-    const date = dayjs(scheduleDate).add(5, 'hour')
-
-    const paddedAuctions: Auction[] = [
+async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: PDF) {
+    const paddedAuctions: AuctionFullInfo[] = [
         ...auctions,
         ...Array.from({ length: Math.max(0, TOTAL_AUCTION_SLOTS - auctions.length) }, () => ({
             ...emptyAuction,
@@ -90,7 +104,7 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
         size: 18,
         maxWidth: 595,
         alignment: 'center',
-        color: convertRGB(0, 0, 0),
+        color: COLORS.BLACK,
         font: headerFont,
     })
 
@@ -99,8 +113,8 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
         y: 710,
         width: 531,
         height: 18,
-        color: convertRGB(68, 114, 196),
-        borderColor: convertRGB(142, 170, 219),
+        color: COLORS.DARK_BLUE,
+        borderColor: COLORS.BLUE,
         borderWidth: 1,
     })
 
@@ -110,7 +124,7 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
         size: 16,
         maxWidth: 531,
         alignment: 'center',
-        color: convertRGB(255, 255, 255),
+        color: COLORS.WHITE,
         font: textFont,
     })
 
@@ -120,7 +134,7 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
         size: 16,
         maxWidth: 531,
         alignment: 'center',
-        color: convertRGB(255, 255, 255),
+        color: COLORS.WHITE,
         font: textFont,
     })
 
@@ -130,7 +144,7 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
         size: 16,
         maxWidth: 531,
         alignment: 'center',
-        color: convertRGB(255, 255, 255),
+        color: COLORS.WHITE,
         font: textFont,
     })
 
@@ -140,7 +154,7 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
         size: 16,
         maxWidth: 531,
         alignment: 'center',
-        color: convertRGB(255, 255, 255),
+        color: COLORS.WHITE,
         font: textFont,
     })
 
@@ -149,7 +163,7 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
         y: 715,
         width: 18,
         height: 5,
-        color: convertRGB(68, 114, 196),
+        color: COLORS.DARK_BLUE,
     })
 
     paddedAuctions.forEach((pe, index) => {
@@ -159,8 +173,8 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
             y: 695 - reductionValue,
             width: 531,
             height: 15,
-            color: convertRGB(217, 226, 243),
-            borderColor: convertRGB(142, 170, 219),
+            color: COLORS.SOFT_BLUE,
+            borderColor: COLORS.BLUE,
             borderWidth: 1,
         })
 
@@ -170,7 +184,7 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
             size: 10,
             maxWidth: 531,
             alignment: 'left',
-            color: convertRGB(0, 0, 0),
+            color: COLORS.BLACK,
             font: textFont,
         })
 
@@ -179,7 +193,7 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
             y: 699 - reductionValue,
             size: 8,
             alignment: 'left',
-            color: convertRGB(0, 0, 0),
+            color: COLORS.BLACK,
             font: textFont,
         })
 
@@ -189,7 +203,7 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
             size: 10,
             maxWidth: 531,
             alignment: 'left',
-            color: convertRGB(0, 0, 0),
+            color: COLORS.BLACK,
             font: textFont,
         })
 
@@ -198,7 +212,7 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
             y: 699 - reductionValue,
             size: 8,
             alignment: 'left',
-            color: convertRGB(0, 0, 0),
+            color: COLORS.BLACK,
             font: textFont,
         })
 
@@ -207,8 +221,8 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
             y: 680 - reductionValue,
             width: 531,
             height: 15,
-            color: convertRGB(255, 255, 255),
-            borderColor: convertRGB(142, 170, 219),
+            color: COLORS.WHITE,
+            borderColor: COLORS.BLUE,
             borderWidth: 1,
         })
 
@@ -218,7 +232,7 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
             size: 10,
             maxWidth: 531,
             alignment: 'left',
-            color: convertRGB(0, 0, 0),
+            color: COLORS.BLACK,
             font: textFont,
         })
 
@@ -227,7 +241,7 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
             y: 684 - reductionValue,
             size: 8,
             alignment: 'left',
-            color: convertRGB(0, 0, 0),
+            color: COLORS.BLACK,
             font: textFont,
         })
 
@@ -237,7 +251,7 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
             size: 10,
             maxWidth: 531,
             alignment: 'left',
-            color: convertRGB(0, 0, 0),
+            color: COLORS.BLACK,
             font: textFont,
         })
 
@@ -246,7 +260,7 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
             y: 684 - reductionValue,
             size: 8,
             alignment: 'left',
-            color: convertRGB(0, 0, 0),
+            color: COLORS.BLACK,
             font: textFont,
         })
 
@@ -256,7 +270,7 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
             size: 10,
             maxWidth: 531,
             alignment: 'left',
-            color: convertRGB(0, 0, 0),
+            color: COLORS.BLACK,
             font: textFont,
         })
 
@@ -266,8 +280,14 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
                 y: 684 - reductionValue,
                 size: 8,
                 alignment: 'left',
-                color: convertRGB(0, 0, 0),
+                color: COLORS.RED,
                 font: textFont,
+            })
+            page.drawLine({
+                start: { x: 499, y: 682.5 - reductionValue },
+                end: { x: 512.2, y: 682.5 - reductionValue },
+                color: COLORS.RED,
+                thickness: 1,
             })
         }
 
@@ -276,8 +296,8 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
             y: 665 - reductionValue,
             width: 531,
             height: 15,
-            color: convertRGB(217, 226, 243),
-            borderColor: convertRGB(142, 170, 219),
+            color: COLORS.SOFT_BLUE,
+            borderColor: COLORS.BLUE,
             borderWidth: 1,
         })
 
@@ -287,7 +307,7 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
             size: 10,
             maxWidth: 531,
             alignment: 'left',
-            color: convertRGB(0, 0, 0),
+            color: COLORS.BLACK,
             font: textFont,
         })
 
@@ -296,7 +316,7 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
             y: 669 - reductionValue,
             size: 8,
             alignment: 'left',
-            color: convertRGB(0, 0, 0),
+            color: COLORS.BLACK,
             font: textFont,
         })
 
@@ -306,7 +326,7 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
             size: 10,
             maxWidth: 531,
             alignment: 'left',
-            color: convertRGB(0, 0, 0),
+            color: COLORS.BLACK,
             font: textFont,
         })
 
@@ -315,7 +335,7 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
             y: 669 - reductionValue,
             size: 8,
             alignment: 'left',
-            color: convertRGB(0, 0, 0),
+            color: COLORS.BLACK,
             font: textFont,
         })
 
@@ -324,7 +344,7 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
             y: 669 - reductionValue,
             size: 8,
             alignment: 'left',
-            color: convertRGB(0, 0, 0),
+            color: COLORS.BLACK,
             font: textFont,
         })
 
@@ -334,7 +354,7 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
                 y: 669 - reductionValue,
                 size: 8,
                 alignment: 'left',
-                color: convertRGB(240, 64, 64),
+                color: COLORS.RED,
                 font: textFont,
             })
         }
@@ -345,7 +365,7 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
                 y: 669 - reductionValue,
                 size: 8,
                 alignment: 'left',
-                color: convertRGB(240, 64, 64),
+                color: COLORS.RED,
                 font: textFont,
             })
         }
@@ -355,8 +375,8 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
             y: 650 - reductionValue,
             width: 531,
             height: 15,
-            color: convertRGB(255, 255, 255),
-            borderColor: convertRGB(142, 170, 219),
+            color: COLORS.WHITE,
+            borderColor: COLORS.BLUE,
             borderWidth: 1,
         })
 
@@ -366,7 +386,7 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
             size: 10,
             maxWidth: 531,
             alignment: 'left',
-            color: convertRGB(0, 0, 0),
+            color: COLORS.BLACK,
             font: textFont,
         })
 
@@ -375,7 +395,7 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
             y: 654.5 - reductionValue,
             size: 8,
             alignment: 'left',
-            color: convertRGB(0, 0, 0),
+            color: COLORS.BLACK,
             font: textFont,
         })
 
@@ -384,7 +404,7 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
             y: 654.5 - reductionValue,
             size: 8,
             alignment: 'left',
-            color: convertRGB(0, 0, 0),
+            color: COLORS.BLACK,
             font: textFont,
         })
 
@@ -393,7 +413,7 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
             y: 654.5 - reductionValue,
             size: 8,
             alignment: 'left',
-            color: convertRGB(0, 0, 0),
+            color: COLORS.BLACK,
             font: textFont,
         })
 
@@ -403,7 +423,7 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
                 y: 654.5 - reductionValue,
                 size: 8,
                 alignment: 'left',
-                color: convertRGB(240, 64, 64),
+                color: COLORS.RED,
                 font: textFont,
             })
         }
@@ -414,7 +434,7 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
                 y: 654.5 - reductionValue,
                 size: 8,
                 alignment: 'left',
-                color: convertRGB(240, 64, 64),
+                color: COLORS.RED,
                 font: textFont,
             })
         }
@@ -425,7 +445,7 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
                 y: 654.5 - reductionValue,
                 size: 8,
                 alignment: 'left',
-                color: convertRGB(240, 64, 64),
+                color: COLORS.RED,
                 font: textFont,
             })
         }
@@ -436,7 +456,7 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
             size: 10,
             maxWidth: 531,
             alignment: 'left',
-            color: convertRGB(0, 0, 0),
+            color: COLORS.BLACK,
             font: textFont,
         })
 
@@ -445,7 +465,7 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
             y: 654.5 - reductionValue,
             size: 8,
             alignment: 'left',
-            color: convertRGB(0, 0, 0),
+            color: COLORS.BLACK,
             font: textFont,
         })
 
@@ -455,7 +475,7 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
             size: 10,
             maxWidth: 531,
             alignment: 'left',
-            color: convertRGB(0, 0, 0),
+            color: COLORS.BLACK,
             font: textFont,
         })
 
@@ -464,8 +484,8 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
             y: 605 - reductionValue,
             width: 531,
             height: 45,
-            color: convertRGB(217, 226, 243),
-            borderColor: convertRGB(142, 170, 219),
+            color: COLORS.SOFT_BLUE,
+            borderColor: COLORS.BLUE,
             borderWidth: 1,
         })
 
@@ -475,9 +495,40 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
             size: 10,
             maxWidth: 531,
             alignment: 'left',
-            color: convertRGB(0, 0, 0),
+            color: COLORS.BLACK,
             font: textFont,
         })
+
+        if (pe.produtos_ofertados.length > 0) {
+            page.drawText(pe.produtos_ofertados.join(' - '), {
+                x: 106,
+                y: 637.5 - reductionValue,
+                size: 8,
+                maxWidth: 531,
+                alignment: 'left',
+                color: COLORS.DARKEST_BLUE,
+                font: textFont,
+            })
+        }
+
+        if (pe.docs) {
+            page.drawText('DOCS', {
+                x: 300,
+                y: 636.5 - reductionValue,
+                size: 9,
+                maxWidth: 531,
+                alignment: 'left',
+                color: COLORS.RED,
+                font: textFont,
+            })
+
+            page.drawLine({
+                start: { x: 300, y: 635 - reductionValue },
+                end: { x: 324, y: 635 - reductionValue },
+                color: COLORS.RED,
+                thickness: 1.5,
+            })
+        }
     })
 
     page.drawText('PREGÕES COM RETORNO HOJE', {
@@ -486,14 +537,14 @@ async function createPage(auctions: Auction[], scheduleDate: Date, pdf: PDF) {
         size: 14,
         maxWidth: 595,
         alignment: 'center',
-        color: convertRGB(31, 56, 100),
+        color: COLORS.DARKEST_BLUE,
         font: headerFont,
     })
 
     page.drawLine({
         start: { x: 222, y: 145 },
         end: { x: 372.7, y: 145 },
-        color: convertRGB(31, 56, 100),
+        color: COLORS.DARKEST_BLUE,
         thickness: 2,
     })
 
