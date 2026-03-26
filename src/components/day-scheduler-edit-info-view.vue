@@ -50,7 +50,7 @@ onMounted(() => {
     <div class="relative flex flex-col w-full mt-2 pb-8 px-1.5 gap-5 overflow-y-auto">
         <InfoSection
             v-for="(auction, index) in fullInfoAuctions"
-            :key="`${auction.municipio_uf} - ${auction.pe}`"
+            :key="index"
             :title="`${index + 1}º EDITAL`"
         >
             <InfoLine>
@@ -60,6 +60,7 @@ onMounted(() => {
                     colSpan="col-span-8"
                     v-model="auction.municipio_uf"
                 />
+
                 <InfoInput
                     label="PE"
                     :id="`pe-${index}`"

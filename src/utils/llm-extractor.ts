@@ -1,9 +1,5 @@
-import { env } from '@/env'
-
-type Provider = 'gemini' | 'openai' | 'anthropic'
-
 interface LLMConfig {
-    provider: Provider
+    provider: string
     apiKey: string
     model: string
     prompt: string
@@ -16,15 +12,8 @@ async function fileToBase64(file: File): Promise<string> {
     )
 }
 
-export async function extractEditalData(file: File, prompt: string, model: string) {
+export async function extractEditalData(file: File, config: LLMConfig) {
     try {
-        const config: LLMConfig = {
-            provider: env.VITE_LLM_EXTRACTOR_PROVIDER,
-            apiKey: env.VITE_LLM_EXTRACTOR_API_KEY,
-            model,
-            prompt,
-        }
-
         const base64 = await fileToBase64(file)
 
         switch (config.provider) {
@@ -97,6 +86,5 @@ async function callAnthropic(base64: string, { apiKey, model, prompt }: LLMConfi
 }
 
 async function callOpenAI() {
-    // OpenAI não aceita PDF direto
     throw new Error('OpenAI não suporta PDF direto. Use Gemini ou Anthropic.')
 }

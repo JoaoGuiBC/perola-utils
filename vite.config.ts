@@ -1,8 +1,8 @@
+import { fileURLToPath, URL } from 'node:url'
+
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import { fileURLToPath, URL } from 'node:url'
 import tailwindcss from '@tailwindcss/vite'
-import { ValidateEnv } from '@julr/vite-plugin-validate-env'
 
 const host = process.env.TAURI_DEV_HOST
 
@@ -12,9 +12,6 @@ export default defineConfig(async () => ({
         tailwindcss(),
         vue({
             template: { compilerOptions: { isCustomElement: (tag) => tag.includes('calendar-') } },
-        }),
-        ValidateEnv({
-            configFile: 'env-schema',
         }),
     ],
     resolve: {

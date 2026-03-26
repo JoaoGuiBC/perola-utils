@@ -8,34 +8,32 @@ import { getCurrentWebview } from '@tauri-apps/api/webview'
 
 import { auctionSchema } from '@/schemas/auction'
 import { extractEditalData } from '@/utils/llm-extractor'
+
+import { useAiConfigStore } from '@/stores/ai-config-store'
 import { useDaySchedulerStore } from '@/stores/day-scheduler-store'
 
 import SchedulerCalendar from '@/components/scheduler-calendar.vue'
 import SchedulerFileStat from '@/components/scheduler-file-stat.vue'
 import DaySchedulerAiSection from '@/components/day-scheduler-ai-section.vue'
 
-const store = useDaySchedulerStore()
-const { currentView, auctions, scheduleDate } = storeToRefs(store)
+const daySchedulerStore = useDaySchedulerStore()
+const { currentView, auctions, scheduleDate } = storeToRefs(daySchedulerStore)
+
+const aiConfigStore = useAiConfigStore()
+const { api_key, prompt, selected_model, selected_provider } = storeToRefs(aiConfigStore)
 
 const isDragging = ref(false)
 const selectedFiles = ref<Array<File>>([])
 const parsingErrors = ref<Array<{ index: number; fileName: string; error: string }>>([])
+const configWarn = ref(false)
 const isLoading = ref(false)
 const currentProcessingFile = ref(0)
 
-const prompt = defineModel('prompt', { type: String, default: '' })
-const currentModel = defineModel('currentModel', { type: String, default: '' })
-const currentModelError = defineModel('currentModelError', { type: Boolean, default: false })
-
 async function createSchedule() {
-    if (!currentModel.value) {
-        currentModelError.value = true
-        return
-    } else {
-        currentModelError.value = false
-    }
+    configWarn.value = !aiConfigStore.isConfigSet()
+    if (configWarn.value) return
 
-    if (!scheduleDate.value || selectedFiles.value.length === 0 || !prompt.value) return
+    if (!scheduleDate.value || selectedFiles.value.length === 0) return
 
     isLoading.value = true
 
@@ -46,7 +44,13 @@ async function createSchedule() {
 
             currentProcessingFile.value = index + 1
 
-            const response = await extractEditalData(file, prompt.value, currentModel.value)
+            const LLMConfig = {
+                apiKey: api_key.value,
+                model: selected_model.value,
+                prompt: prompt.value,
+                provider: selected_provider.value,
+            }
+            const response = await extractEditalData(file, LLMConfig)
 
             const { success, data } = auctionSchema.safeParse(response)
 
@@ -167,12 +171,6 @@ onUnmounted(() => {
         />
     </fieldset>
 
-    <DaySchedulerAiSection
-        v-model:prompt="prompt"
-        v-model:current-model="currentModel"
-        v-model:current-model-error="currentModelError"
-    />
-
     <SchedulerCalendar v-model="scheduleDate" />
 
     <TransitionGroup
@@ -189,10 +187,24 @@ onUnmounted(() => {
         />
     </TransitionGroup>
 
-    <button type="button" :disabled="isLoading" class="btn transition-all" @click="createSchedule">
-        <span v-if="isLoading" class="loading loading-ring" />
-        {{ isLoading ? 'GERANDO' : 'GERAR PROGRAMAÇÃO' }}
-    </button>
+    <div class="flex items-center justify-center gap-1.5">
+        <button
+            type="button"
+            :disabled="isLoading"
+            class="btn transition-all"
+            @click="createSchedule"
+        >
+            <span v-if="isLoading" class="loading loading-ring" />
+            {{ isLoading ? 'GERANDO' : 'GERAR PROGRAMAÇÃO' }}
+        </button>
+
+        <DaySchedulerAiSection />
+    </div>
+
+    <p v-if="configWarn" class="underline w-80 text-center leading-tight mt-2 mb-3">
+        CHEQUE AS CONFIGURAÇÕES ANTES DE PROSSEGUIR
+    </p>
+
     <legend class="leading-none text-xs text-primary" v-if="currentProcessingFile > 0">
         lendo arquivo {{ currentProcessingFile }} de {{ selectedFiles.length }}
     </legend>
