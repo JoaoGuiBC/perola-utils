@@ -10,5 +10,11 @@ export const useDaySchedulerStore = defineStore('day_scheduler', () => {
     const currentView = ref<CurrentView>('insert_files')
     const auctions = ref<Array<Auction>>([])
 
-    return { scheduleDate, currentView, auctions }
+    function clean() {
+        scheduleDate.value = ''
+        currentView.value = 'insert_files'
+        auctions.value = []
+    }
+
+    return { scheduleDate, currentView, auctions, clean }
 })

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { onMounted, ref } from 'vue'
+import { PhPlus } from '@phosphor-icons/vue'
 
 import { createPDF } from '@/utils/create-pdf'
 import { type AuctionFullInfo } from '@/schemas/auction'
@@ -13,9 +14,13 @@ import InfoRadio from './day-scheduler-info-radio.vue'
 import InfoCheckbox from './day-scheduler-info-checkbox.vue'
 import InfoToggle from './day-scheduler-info-toggle.vue'
 
+interface FullInfoAuction extends AuctionFullInfo {
+    isDeleted: boolean
+}
+
 const PRODUCT_ORDER = ['MEDICAMENTO', 'MATERIAL', 'SORO', 'FRALDA']
 
-const fullInfoAuctions = ref<Array<AuctionFullInfo>>([])
+const fullInfoAuctions = ref<Array<FullInfoAuction>>([])
 const isLoading = ref(false)
 
 const store = useDaySchedulerStore()
@@ -28,12 +33,52 @@ const sortProducts = (val: string[] | undefined) => {
 
 async function handleSubmit() {
     isLoading.value = true
-    await createPDF(fullInfoAuctions.value, new Date(scheduleDate.value))
+
+    const auctionsToProcess = fullInfoAuctions.value.filter((a) => !a.isDeleted)
+
+    await createPDF(auctionsToProcess, new Date(scheduleDate.value))
     isLoading.value = false
 
     auctions.value = []
     scheduleDate.value = ''
     currentView.value = 'insert_files'
+}
+
+function addNewAuction() {
+    fullInfoAuctions.value.push({
+        docs: false,
+        garantia: false,
+        isDeleted: false,
+        produtos_ofertados: [],
+        hora: null,
+        municipio_uf: null,
+        pe: null,
+        pede_amostra: null,
+        plataforma: null,
+        sistema: null,
+        uasg: null,
+        validade_proposta: null,
+    })
+}
+
+function deleteAuction(auction: FullInfoAuction, auctionIndex: number) {
+    if (!auction.municipio_uf) {
+        fullInfoAuctions.value = fullInfoAuctions.value.filter((_, index) => index !== auctionIndex)
+        return
+    }
+
+    fullInfoAuctions.value = fullInfoAuctions.value.map((item) => {
+        if (item.municipio_uf === auction.municipio_uf)
+            return { ...auction, isDeleted: !auction.isDeleted }
+
+        return item
+    })
+}
+
+function handleCancelOperation() {
+    fullInfoAuctions.value = []
+    auctions.value = []
+    store.clean()
 }
 
 onMounted(() => {
@@ -42,6 +87,7 @@ onMounted(() => {
         garantia: !!auction.garantia,
         docs: false,
         produtos_ofertados: [],
+        isDeleted: false,
     }))
 })
 </script>
@@ -52,6 +98,8 @@ onMounted(() => {
             v-for="(auction, index) in fullInfoAuctions"
             :key="index"
             :title="`${index + 1}º EDITAL`"
+            :isDeleted="auction.isDeleted"
+            @toggle-delete="() => deleteAuction(auction, index)"
         >
             <InfoLine>
                 <InfoInput
@@ -217,14 +265,27 @@ onMounted(() => {
             </InfoLine>
         </InfoSection>
 
-        <button
-            type="button"
-            :disabled="isLoading"
-            class="fixed btn btn-primary btn-sm bottom-4 w-24 drop-shadow-sm drop-shadow-primary/80 right-10"
-            @click="handleSubmit"
-        >
-            <span v-if="isLoading" class="loading loading-ring" />
-            <span v-else>SALVAR</span>
+        <button type="button" class="btn btn-circle btn-sm btn-primary" @click="addNewAuction">
+            <PhPlus class="size-5" weight="bold" />
         </button>
+
+        <div class="fixed flex gap-2 bottom-4 right-13 z-50">
+            <button
+                type="button"
+                class="btn bg-base-100 btn-sm border-none"
+                @click="handleCancelOperation"
+            >
+                CANCELAR
+            </button>
+            <button
+                type="button"
+                :disabled="isLoading"
+                class="btn btn-primary btn-sm w-24 drop-shadow-sm drop-shadow-primary/80"
+                @click="handleSubmit"
+            >
+                <span v-if="isLoading" class="loading loading-ring" />
+                <span v-else>SALVAR</span>
+            </button>
+        </div>
     </div>
 </template>

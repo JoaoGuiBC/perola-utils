@@ -24,8 +24,6 @@ export const useAiConfigStore = defineStore('ai_config', () => {
         const inMemorySelectedModel = (await tauriStore.get<string>('selected_model')) || ''
         const inMemoryModelList = (await tauriStore.get<string[]>('model_list')) || []
 
-        console.log(inMemorySelectedModel)
-
         prompt.value = inMemoryPrompt
         selected_provider.value = inMemorySelectedProvider
         api_key.value = inMemoryApiKey
