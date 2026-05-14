@@ -64,11 +64,11 @@ export async function readFile(
 
         if ('WithItems' in result) {
             withoutRegisterList.value = itemsWithoutRegister.map((item) => {
-                return `${item.item} - ${item.produto} - ${item.registro}`
+                return `${item.item} - ${item.produto} - ${item.registro} - ${item.fornecedor}`
             })
 
             notFoundRegisterList.value = result.WithItems.not_found.map((item) => {
-                return `${item.item} - ${item.produto} - ${item.registro}`
+                return `${item.item} - ${item.produto} - ${item.registro} - ${item.fornecedor}`
             })
 
             screenContent.value = 'info'
