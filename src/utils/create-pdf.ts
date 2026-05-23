@@ -3,18 +3,38 @@ import { PDF } from '@libpdf/core'
 
 import { convertRGB } from './convert-rgb'
 import { type AuctionFullInfo } from '@/schemas/auction'
+import { type Company } from '@/stores/ai-config-store'
 
 const TOTAL_AUCTION_SLOTS = 5
 
-const COLORS = {
-    WHITE: convertRGB(255, 255, 255),
-    BLACK: convertRGB(0, 0, 0),
-    RED: convertRGB(240, 64, 64),
-    SOFT_BLUE: convertRGB(217, 226, 243),
-    BLUE: convertRGB(142, 170, 219),
-    DARK_BLUE: convertRGB(68, 114, 196),
-    DARKEST_BLUE: convertRGB(31, 56, 100),
-}
+const CONFIG_PER_COMPANY = [
+    {
+        COMPANY: 'perola',
+        LOGO_PATH: '/perola_logo.png',
+        COLORS: {
+            WHITE: convertRGB(255, 255, 255),
+            BLACK: convertRGB(0, 0, 0),
+            RED: convertRGB(240, 64, 64),
+            SOFT_BLUE: convertRGB(217, 226, 243),
+            BLUE: convertRGB(142, 170, 219),
+            DARK_BLUE: convertRGB(68, 114, 196),
+            DARKEST_BLUE: convertRGB(31, 56, 100),
+        },
+    },
+    {
+        COMPANY: 'arlimed',
+        LOGO_PATH: '/arlimed_logo.png',
+        COLORS: {
+            WHITE: convertRGB(255, 255, 255),
+            BLACK: convertRGB(0, 0, 0),
+            RED: convertRGB(240, 64, 64),
+            SOFT_BLUE: convertRGB(211, 235, 218),
+            BLUE: convertRGB(128, 195, 146),
+            DARK_BLUE: convertRGB(61, 135, 82),
+            DARKEST_BLUE: convertRGB(31, 68, 40),
+        },
+    },
+]
 
 const emptyAuction: AuctionFullInfo = {
     municipio_uf: '',
@@ -30,7 +50,7 @@ const emptyAuction: AuctionFullInfo = {
     docs: false,
 }
 
-export async function createPDF(auctions: AuctionFullInfo[], scheduleDate: Date) {
+export async function createPDF(auctions: AuctionFullInfo[], scheduleDate: Date, company: Company) {
     const date = dayjs(scheduleDate).add(5, 'hour')
 
     const pdf = PDF.create()
@@ -51,7 +71,7 @@ export async function createPDF(auctions: AuctionFullInfo[], scheduleDate: Date)
     )
 
     for (const auctionArray of splitAuctions) {
-        await createPage(auctionArray, date, pdf)
+        await createPage(auctionArray, date, pdf, company)
     }
 
     const pdfName = `PROGRAMAÇÃO DO DIA ${date.format('DD-MM')}`
@@ -70,7 +90,15 @@ export async function createPDF(auctions: AuctionFullInfo[], scheduleDate: Date)
     URL.revokeObjectURL(url)
 }
 
-async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: PDF) {
+async function createPage(
+    auctions: AuctionFullInfo[],
+    date: dayjs.Dayjs,
+    pdf: PDF,
+    company: Company,
+) {
+    const config = CONFIG_PER_COMPANY.find((c) => c.COMPANY === company) || CONFIG_PER_COMPANY[0]
+    const COLORS = config.COLORS
+
     const paddedAuctions: AuctionFullInfo[] = [
         ...auctions,
         ...Array.from({ length: Math.max(0, TOTAL_AUCTION_SLOTS - auctions.length) }, () => ({
@@ -88,11 +116,11 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
     const textFontBytes = new Uint8Array(await textFontResponse.arrayBuffer())
     const textFont = pdf.embedFont(textFontBytes)
 
-    const LogoResponse = await fetch('/perola_logo.png')
+    const LogoResponse = await fetch(config.LOGO_PATH)
     const logoBytes = new Uint8Array(await LogoResponse.arrayBuffer())
-    const perolaLogo = pdf.embedPng(logoBytes)
+    const logoImage = pdf.embedPng(logoBytes)
 
-    page.drawImage(perolaLogo, {
+    page.drawImage(logoImage, {
         x: 211.5,
         y: 760,
         width: 172,
@@ -100,7 +128,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
 
     page.drawText('SETOR DE LICITAÇÕES', {
         x: 0,
-        y: 735,
+        y: 738,
         size: 18,
         maxWidth: 595,
         alignment: 'center',
@@ -110,17 +138,18 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
 
     page.drawRectangle({
         x: 32.5,
-        y: 710,
+        y: 712,
         width: 531,
-        height: 18,
+        height: 20,
         color: COLORS.DARK_BLUE,
         borderColor: COLORS.BLUE,
         borderWidth: 1,
+        cornerRadius: 2,
     })
 
     page.drawText(`PROGRAMAÇÃO DO DIA - ____ /____ /____`, {
         x: 32.5,
-        y: 713,
+        y: 716,
         size: 16,
         maxWidth: 531,
         alignment: 'center',
@@ -130,7 +159,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
 
     page.drawText(`${date.format('DD')}`, {
         x: 90,
-        y: 714,
+        y: 717,
         size: 16,
         maxWidth: 531,
         alignment: 'center',
@@ -140,7 +169,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
 
     page.drawText(`${date.format('MM')}`, {
         x: 125.5,
-        y: 714,
+        y: 717,
         size: 16,
         maxWidth: 531,
         alignment: 'center',
@@ -150,7 +179,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
 
     page.drawText(`${date.format('YY')}`, {
         x: 160,
-        y: 714,
+        y: 717,
         size: 16,
         maxWidth: 531,
         alignment: 'center',
@@ -160,7 +189,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
 
     page.drawRectangle({
         x: 329,
-        y: 715,
+        y: 717,
         width: 18,
         height: 5,
         color: COLORS.DARK_BLUE,
@@ -168,11 +197,9 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
 
     paddedAuctions.forEach((pe, index) => {
         const reductionValue = 110 * index
-        page.drawRectangle({
+        page.drawSvgPath(`M 0,15 L 0,2 A 2,2 0 0,1 2,0 L 529,0 A 2,2 0 0,1 531,2 L 531,15 Z`, {
             x: 32.5,
-            y: 695 - reductionValue,
-            width: 531,
-            height: 15,
+            y: 708 - reductionValue,
             color: COLORS.SOFT_BLUE,
             borderColor: COLORS.BLUE,
             borderWidth: 1,
@@ -180,7 +207,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
 
         page.drawText('MUNICÍPIO:', {
             x: 38,
-            y: 699 - reductionValue,
+            y: 697 - reductionValue,
             size: 10,
             maxWidth: 531,
             alignment: 'left',
@@ -190,7 +217,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
 
         page.drawText(pe.municipio_uf ?? '', {
             x: 95,
-            y: 699 - reductionValue,
+            y: 697 - reductionValue,
             size: 8,
             alignment: 'left',
             color: COLORS.BLACK,
@@ -199,7 +226,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
 
         page.drawText('PE:', {
             x: 280,
-            y: 699 - reductionValue,
+            y: 697 - reductionValue,
             size: 10,
             maxWidth: 531,
             alignment: 'left',
@@ -209,7 +236,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
 
         page.drawText(pe.pe ?? '', {
             x: 298,
-            y: 699 - reductionValue,
+            y: 697 - reductionValue,
             size: 8,
             alignment: 'left',
             color: COLORS.BLACK,
@@ -218,7 +245,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
 
         page.drawRectangle({
             x: 32.5,
-            y: 680 - reductionValue,
+            y: 678 - reductionValue,
             width: 531,
             height: 15,
             color: COLORS.WHITE,
@@ -228,7 +255,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
 
         page.drawText('HORA:', {
             x: 37,
-            y: 684 - reductionValue,
+            y: 682 - reductionValue,
             size: 10,
             maxWidth: 531,
             alignment: 'left',
@@ -238,7 +265,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
 
         page.drawText(pe.hora ?? '', {
             x: 72,
-            y: 684 - reductionValue,
+            y: 682 - reductionValue,
             size: 8,
             alignment: 'left',
             color: COLORS.BLACK,
@@ -247,7 +274,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
 
         page.drawText('VALIDADE DA PROPOSTA:', {
             x: 280,
-            y: 684 - reductionValue,
+            y: 682 - reductionValue,
             size: 10,
             maxWidth: 531,
             alignment: 'left',
@@ -257,7 +284,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
 
         page.drawText(pe.validade_proposta ?? '', {
             x: 400,
-            y: 684 - reductionValue,
+            y: 682 - reductionValue,
             size: 8,
             alignment: 'left',
             color: COLORS.BLACK,
@@ -266,7 +293,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
 
         page.drawText('GARANTIA:', {
             x: 445,
-            y: 684 - reductionValue,
+            y: 682 - reductionValue,
             size: 10,
             maxWidth: 531,
             alignment: 'left',
@@ -277,15 +304,15 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
         if (pe.garantia) {
             page.drawText('SIM', {
                 x: 499,
-                y: 684 - reductionValue,
+                y: 682 - reductionValue,
                 size: 8,
                 alignment: 'left',
                 color: COLORS.RED,
                 font: textFont,
             })
             page.drawLine({
-                start: { x: 499, y: 682.5 - reductionValue },
-                end: { x: 512.2, y: 682.5 - reductionValue },
+                start: { x: 499, y: 680.5 - reductionValue },
+                end: { x: 512.2, y: 680.5 - reductionValue },
                 color: COLORS.RED,
                 thickness: 1,
             })
@@ -293,7 +320,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
 
         page.drawRectangle({
             x: 32.5,
-            y: 665 - reductionValue,
+            y: 663 - reductionValue,
             width: 531,
             height: 15,
             color: COLORS.SOFT_BLUE,
@@ -303,7 +330,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
 
         page.drawText('PLATAFORMA:', {
             x: 37,
-            y: 669 - reductionValue,
+            y: 667 - reductionValue,
             size: 10,
             maxWidth: 531,
             alignment: 'left',
@@ -313,7 +340,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
 
         page.drawText(pe.plataforma ?? '', {
             x: 105,
-            y: 669 - reductionValue,
+            y: 667 - reductionValue,
             size: 8,
             alignment: 'left',
             color: COLORS.BLACK,
@@ -322,7 +349,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
 
         page.drawText('SISTEMA:', {
             x: 280,
-            y: 669 - reductionValue,
+            y: 667 - reductionValue,
             size: 10,
             maxWidth: 531,
             alignment: 'left',
@@ -332,7 +359,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
 
         page.drawText('ABERTO [   ]', {
             x: 325,
-            y: 669 - reductionValue,
+            y: 667 - reductionValue,
             size: 8,
             alignment: 'left',
             color: COLORS.BLACK,
@@ -341,7 +368,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
 
         page.drawText('ABERTO/FECHADO [   ]', {
             x: 385,
-            y: 669 - reductionValue,
+            y: 667 - reductionValue,
             size: 8,
             alignment: 'left',
             color: COLORS.BLACK,
@@ -351,7 +378,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
         if (pe.sistema === 'ABERTO') {
             page.drawText('●', {
                 x: 358.2,
-                y: 669 - reductionValue,
+                y: 667 - reductionValue,
                 size: 8,
                 alignment: 'left',
                 color: COLORS.RED,
@@ -362,7 +389,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
         if (pe.sistema === 'ABERTO E FECHADO') {
             page.drawText('●', {
                 x: 456.5,
-                y: 669 - reductionValue,
+                y: 667 - reductionValue,
                 size: 8,
                 alignment: 'left',
                 color: COLORS.RED,
@@ -372,7 +399,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
 
         page.drawRectangle({
             x: 32.5,
-            y: 650 - reductionValue,
+            y: 648 - reductionValue,
             width: 531,
             height: 15,
             color: COLORS.WHITE,
@@ -382,7 +409,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
 
         page.drawText('PEDE AMOSTRA:', {
             x: 37,
-            y: 653.5 - reductionValue,
+            y: 651.5 - reductionValue,
             size: 10,
             maxWidth: 531,
             alignment: 'left',
@@ -392,7 +419,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
 
         page.drawText('SIM [   ]', {
             x: 114,
-            y: 654.5 - reductionValue,
+            y: 652.5 - reductionValue,
             size: 8,
             alignment: 'left',
             color: COLORS.BLACK,
@@ -401,7 +428,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
 
         page.drawText('NÃO [   ]', {
             x: 155,
-            y: 654.5 - reductionValue,
+            y: 652.5 - reductionValue,
             size: 8,
             alignment: 'left',
             color: COLORS.BLACK,
@@ -410,7 +437,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
 
         page.drawText('PODERÁ [   ]', {
             x: 196.5,
-            y: 654.5 - reductionValue,
+            y: 652.5 - reductionValue,
             size: 8,
             alignment: 'left',
             color: COLORS.BLACK,
@@ -420,7 +447,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
         if (pe.pede_amostra === 'SIM') {
             page.drawText('●', {
                 x: 131,
-                y: 654.5 - reductionValue,
+                y: 652.5 - reductionValue,
                 size: 8,
                 alignment: 'left',
                 color: COLORS.RED,
@@ -431,7 +458,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
         if (pe.pede_amostra === 'NÃO') {
             page.drawText('●', {
                 x: 175,
-                y: 654.5 - reductionValue,
+                y: 652.5 - reductionValue,
                 size: 8,
                 alignment: 'left',
                 color: COLORS.RED,
@@ -442,7 +469,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
         if (pe.pede_amostra === 'PODERÁ') {
             page.drawText('●', {
                 x: 230,
-                y: 654.5 - reductionValue,
+                y: 652.5 - reductionValue,
                 size: 8,
                 alignment: 'left',
                 color: COLORS.RED,
@@ -452,7 +479,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
 
         page.drawText('UASG:', {
             x: 280,
-            y: 653.5 - reductionValue,
+            y: 651.5 - reductionValue,
             size: 10,
             maxWidth: 531,
             alignment: 'left',
@@ -462,7 +489,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
 
         page.drawText(pe.uasg || '', {
             x: 313,
-            y: 654.5 - reductionValue,
+            y: 652.5 - reductionValue,
             size: 8,
             alignment: 'left',
             color: COLORS.BLACK,
@@ -471,7 +498,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
 
         page.drawText('ATESTADO:', {
             x: 445,
-            y: 653.5 - reductionValue,
+            y: 651.5 - reductionValue,
             size: 10,
             maxWidth: 531,
             alignment: 'left',
@@ -479,11 +506,9 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
             font: textFont,
         })
 
-        page.drawRectangle({
+        page.drawSvgPath(`M 0,0 L 531,0 L 531,43 A 2,2 0 0,1 529,45 L 2,45 A 2,2 0 0,1 0,43 Z`, {
             x: 32.5,
-            y: 605 - reductionValue,
-            width: 531,
-            height: 45,
+            y: 648 - reductionValue,
             color: COLORS.SOFT_BLUE,
             borderColor: COLORS.BLUE,
             borderWidth: 1,
@@ -491,7 +516,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
 
         page.drawText('OBSERVAÇÃO:', {
             x: 37,
-            y: 637.5 - reductionValue,
+            y: 635.5 - reductionValue,
             size: 10,
             maxWidth: 531,
             alignment: 'left',
@@ -502,7 +527,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
         if (pe.produtos_ofertados.length > 0) {
             page.drawText(pe.produtos_ofertados.join(' - '), {
                 x: 106,
-                y: 637.5 - reductionValue,
+                y: 635.5 - reductionValue,
                 size: 8,
                 maxWidth: 531,
                 alignment: 'left',
@@ -514,7 +539,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
         if (pe.docs) {
             page.drawText('DOCS', {
                 x: 300,
-                y: 636.5 - reductionValue,
+                y: 634.5 - reductionValue,
                 size: 9,
                 maxWidth: 531,
                 alignment: 'left',
@@ -523,8 +548,8 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
             })
 
             page.drawLine({
-                start: { x: 300, y: 635 - reductionValue },
-                end: { x: 324, y: 635 - reductionValue },
+                start: { x: 300, y: 633 - reductionValue },
+                end: { x: 324, y: 633 - reductionValue },
                 color: COLORS.RED,
                 thickness: 1.5,
             })
@@ -533,7 +558,7 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
 
     page.drawText('PREGÕES COM RETORNO HOJE', {
         x: 0,
-        y: 148,
+        y: 146,
         size: 14,
         maxWidth: 595,
         alignment: 'center',
@@ -542,8 +567,8 @@ async function createPage(auctions: AuctionFullInfo[], date: dayjs.Dayjs, pdf: P
     })
 
     page.drawLine({
-        start: { x: 222, y: 145 },
-        end: { x: 372.7, y: 145 },
+        start: { x: 222, y: 143 },
+        end: { x: 372.7, y: 143 },
         color: COLORS.DARKEST_BLUE,
         thickness: 2,
     })

@@ -6,7 +6,7 @@ import { PhPlusCircle, PhTrash } from '@phosphor-icons/vue'
 import { useAiConfigStore } from '@/stores/ai-config-store'
 
 const store = useAiConfigStore()
-const { isModalOpen, selected_provider, api_key, model_list, selected_model, prompt } =
+const { isModalOpen, selected_provider, api_key, model_list, selected_model, prompt, company } =
     storeToRefs(store)
 
 const isLoading = ref(false)
@@ -31,6 +31,7 @@ async function handleUpdate() {
         !selected_provider.value ||
         !api_key.value ||
         !selected_model.value ||
+        !company.value ||
         prompt.value.length < 10
     ) {
         return
@@ -74,41 +75,77 @@ function handleRemoveModel(removedModel: string) {
             </div>
 
             <div class="flex gap-5">
-                <section
-                    class="relative flex flex-col gap-2 border border-neutral rounded-field p-2 pt-3 h-fit"
-                >
-                    <span
-                        class="absolute z-10 -top-1.5 left-1.5 bg-base-100 px-0.5 font-medium text-sm leading-none"
+                <div class="flex flex-col gap-5">
+                    <section
+                        class="relative flex flex-col gap-2 border border-neutral rounded-field p-2 pt-3 h-fit"
                     >
-                        PROVEDOR
-                    </span>
+                        <span
+                            class="absolute z-10 -top-1.5 left-1.5 bg-base-100 px-0.5 font-medium text-sm leading-none"
+                        >
+                            ESTILO PDF
+                        </span>
 
-                    <label for="gemini-radio" class="flex items-center gap-1 cursor-pointer">
-                        <input
-                            type="radio"
-                            name="ai-provider"
-                            id="gemini-radio"
-                            value="gemini"
-                            class="radio radio-xs radio-primary"
-                            v-model="selected_provider"
-                        />
-                        <span class="text-sm leading-none">gemini</span>
-                    </label>
+                        <label for="perola-radio" class="flex items-center gap-1 cursor-pointer">
+                            <input
+                                type="radio"
+                                name="company"
+                                id="perola-radio"
+                                value="perola"
+                                class="radio radio-xs radio-primary"
+                                v-model="company"
+                            />
+                            <span class="text-sm leading-none">perola</span>
+                        </label>
 
-                    <label for="anthropic-radio" class="flex items-center gap-1 cursor-pointer">
-                        <input
-                            type="radio"
-                            name="ai-provider"
-                            id="anthropic-radio"
-                            value="anthropic"
-                            class="radio radio-xs radio-primary"
-                            v-model="selected_provider"
-                        />
-                        <span class="text-sm leading-none">anthropic</span>
-                    </label>
-                </section>
+                        <label for="arlimed-radio" class="flex items-center gap-1 cursor-pointer">
+                            <input
+                                type="radio"
+                                name="company"
+                                id="arlimed-radio"
+                                value="arlimed"
+                                class="radio radio-xs radio-primary"
+                                v-model="company"
+                            />
+                            <span class="text-sm leading-none">arlimed</span>
+                        </label>
+                    </section>
 
-                <div class="flex flex-col gap-3 flex-1 h-fit">
+                    <section
+                        class="relative flex flex-col gap-2 border border-neutral rounded-field p-2 pt-3 h-fit"
+                    >
+                        <span
+                            class="absolute z-10 -top-1.5 left-1.5 bg-base-100 px-0.5 font-medium text-sm leading-none"
+                        >
+                            PROVEDOR
+                        </span>
+
+                        <label for="gemini-radio" class="flex items-center gap-1 cursor-pointer">
+                            <input
+                                type="radio"
+                                name="ai-provider"
+                                id="gemini-radio"
+                                value="gemini"
+                                class="radio radio-xs radio-primary"
+                                v-model="selected_provider"
+                            />
+                            <span class="text-sm leading-none">gemini</span>
+                        </label>
+
+                        <label for="anthropic-radio" class="flex items-center gap-1 cursor-pointer">
+                            <input
+                                type="radio"
+                                name="ai-provider"
+                                id="anthropic-radio"
+                                value="anthropic"
+                                class="radio radio-xs radio-primary"
+                                v-model="selected_provider"
+                            />
+                            <span class="text-sm leading-none">anthropic</span>
+                        </label>
+                    </section>
+                </div>
+
+                <div class="flex flex-col gap-5 flex-1 h-fit">
                     <label for="api-key" class="relative h-fit">
                         <span
                             class="absolute z-10 -top-1.5 left-1.5 bg-base-100 px-0.5 font-medium text-sm leading-none"

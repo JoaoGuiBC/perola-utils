@@ -6,6 +6,7 @@ import { PhPlus } from '@phosphor-icons/vue'
 import { createPDF } from '@/utils/create-pdf'
 import { type AuctionFullInfo } from '@/schemas/auction'
 import { useDaySchedulerStore } from '@/stores/day-scheduler-store'
+import { useAiConfigStore } from '@/stores/ai-config-store'
 
 import InfoSection from './day-scheduler-info-section.vue'
 import InfoLine from './day-scheduler-info-line.vue'
@@ -26,6 +27,9 @@ const isLoading = ref(false)
 const store = useDaySchedulerStore()
 const { currentView, auctions, scheduleDate } = storeToRefs(store)
 
+const aiConfigStore = useAiConfigStore()
+const { company } = storeToRefs(aiConfigStore)
+
 const sortProducts = (val: string[] | undefined) => {
     if (!val) return []
     return [...val].sort((a, b) => PRODUCT_ORDER.indexOf(a) - PRODUCT_ORDER.indexOf(b))
@@ -36,7 +40,7 @@ async function handleSubmit() {
 
     const auctionsToProcess = fullInfoAuctions.value.filter((a) => !a.isDeleted)
 
-    await createPDF(auctionsToProcess, new Date(scheduleDate.value))
+    await createPDF(auctionsToProcess, new Date(scheduleDate.value), company.value)
     isLoading.value = false
 
     auctions.value = []

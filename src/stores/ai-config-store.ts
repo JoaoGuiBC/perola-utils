@@ -5,10 +5,13 @@ import { load, Store as TauriStore } from '@tauri-apps/plugin-store'
 
 let tauriStore: TauriStore
 
+export type Company = 'perola' | 'arlimed'
+
 export const useAiConfigStore = defineStore('ai_config', () => {
     const isModalOpen = ref(false)
 
     const prompt = ref('')
+    const company = ref<Company>('perola')
     const selected_provider = ref('')
     const api_key = ref('')
     const selected_model = ref('')
@@ -18,6 +21,7 @@ export const useAiConfigStore = defineStore('ai_config', () => {
         tauriStore = await load('settings.json')
 
         const inMemoryPrompt = (await tauriStore.get<string>('prompt')) || ''
+        const inMemoryCompany = (await tauriStore.get<Company>('company')) || 'perola'
         const inMemorySelectedProvider =
             (await tauriStore.get<'gemini' | 'anthropic'>('selected_provider')) || 'gemini'
         const inMemoryApiKey = (await tauriStore.get<string>('api_key')) || ''
@@ -25,6 +29,7 @@ export const useAiConfigStore = defineStore('ai_config', () => {
         const inMemoryModelList = (await tauriStore.get<string[]>('model_list')) || []
 
         prompt.value = inMemoryPrompt
+        company.value = inMemoryCompany
         selected_provider.value = inMemorySelectedProvider
         api_key.value = inMemoryApiKey
         selected_model.value = inMemorySelectedModel
@@ -33,6 +38,7 @@ export const useAiConfigStore = defineStore('ai_config', () => {
 
     async function save() {
         await tauriStore.set('prompt', prompt.value)
+        await tauriStore.set('company', company.value)
         await tauriStore.set('selected_provider', selected_provider.value)
         await tauriStore.set('api_key', api_key.value)
         await tauriStore.set('selected_model', selected_model.value)
@@ -43,13 +49,18 @@ export const useAiConfigStore = defineStore('ai_config', () => {
 
     function isConfigSet() {
         return (
-            !!prompt.value && !!selected_provider.value && !!api_key.value && !!selected_model.value
+            !!prompt.value &&
+            !!company.value &&
+            !!selected_provider.value &&
+            !!api_key.value &&
+            !!selected_model.value
         )
     }
 
     return {
         isModalOpen,
         prompt,
+        company,
         selected_provider,
         api_key,
         selected_model,
